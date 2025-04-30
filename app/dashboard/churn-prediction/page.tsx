@@ -97,23 +97,19 @@ export default function ChurnPredictionPage() {
       
       const data = await response.json();
       
-      // Transform user data to include activity metrics
       const usersWithActivity = data.users.map((user: User) => {
-        // Use the same consistent activity data generation logic as in handlePredictAll
         const userIdSum = user.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
         const normalizedSeed = userIdSum / 1000;
         
         const daysSinceCreated = Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24));
         const daysSinceActivity = Math.min(daysSinceCreated, Math.floor(normalizedSeed * 30));
         
-        // Make event count depend on plan but be consistent for the same user
         let eventMultiplier = 1;
         if (user.plan === 'premium') eventMultiplier = 3;
         else if (user.plan === 'basic') eventMultiplier = 2;
         
         const eventsLast30 = Math.floor((normalizedSeed * 50 + 10) * eventMultiplier);
         
-        // Revenue is directly tied to plan and events
         let baseRevenue = 0;
         if (user.plan === 'premium') baseRevenue = 300;
         else if (user.plan === 'basic') baseRevenue = 100;
@@ -146,14 +142,13 @@ export default function ChurnPredictionPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearch(searchInputValue);
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on new search
+    setPagination(prev => ({ ...prev, page: 1 })); 
   };
   
   const handlePredictAll = async () => {
     try {
       setPredictLoading(true);
       
-      // First, fetch ALL users (not just current page)
       const allUsersResponse = await fetch('/api/users?limit=999');
       if (!allUsersResponse.ok) {
         throw new Error('Failed to fetch all users');
@@ -161,29 +156,21 @@ export default function ChurnPredictionPage() {
       
       const allUsersData = await allUsersResponse.json();
       
-      // Transform user data to include activity metrics (same logic as in fetchUsers)
       const allUsersWithActivity = allUsersData.users.map((user: any) => {
-        // Type assertion to avoid TypeScript error
         const typedUser = user as User;
         
-        // Generate consistent activity data based on user ID
-        // This approach ensures the same user will get similar values each time
-        // By using the user ID as a seed for pseudo-random generation
         const userIdSum = typedUser.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-        const normalizedSeed = userIdSum / 1000; // Normalize to get a value between 0-1 approximately
+        const normalizedSeed = userIdSum / 1000; 
         
-        // Use the normalized seed to generate consistent values
         const daysSinceCreated = Math.floor((Date.now() - new Date(typedUser.createdAt).getTime()) / (1000 * 60 * 60 * 24));
         const daysSinceActivity = Math.min(daysSinceCreated, Math.floor(normalizedSeed * 30));
         
-        // Make event count depend on plan but be consistent for the same user
         let eventMultiplier = 1;
         if (typedUser.plan === 'premium') eventMultiplier = 3;
         else if (typedUser.plan === 'basic') eventMultiplier = 2;
         
         const eventsLast30 = Math.floor((normalizedSeed * 50 + 10) * eventMultiplier);
         
-        // Revenue is directly tied to plan and events
         let baseRevenue = 0;
         if (typedUser.plan === 'premium') baseRevenue = 300;
         else if (typedUser.plan === 'basic') baseRevenue = 100;
@@ -198,7 +185,6 @@ export default function ChurnPredictionPage() {
         };
       });
       
-      // Prepare batch prediction data for ALL users
       const predictionRequests = allUsersWithActivity.map((user: UserWithActivity) => {
         return {
           userId: user.id,
@@ -209,7 +195,6 @@ export default function ChurnPredictionPage() {
         };
       });
       
-      // Make batch prediction request
       const response = await fetch('/api/churn-prediction', {
         method: 'POST',
         headers: {
@@ -224,7 +209,6 @@ export default function ChurnPredictionPage() {
       
       const result = await response.json();
       
-      // Combine prediction results with user data
       const predictionsWithUserInfo = result.predictions.map((pred: any, index: number) => ({
         userId: allUsersWithActivity[index].id,
         name: allUsersWithActivity[index].name,
@@ -234,11 +218,9 @@ export default function ChurnPredictionPage() {
       
       setPredictions(predictionsWithUserInfo);
       
-      // Show success message
       setSuccessMessage('Churn predicted for all ' + allUsersWithActivity.length + ' users in the database!');
       setError(null);
       
-      // Refresh current page data to get updated churn predictions
       fetchUsers();
       
     } catch (err) {

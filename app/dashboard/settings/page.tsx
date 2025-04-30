@@ -28,18 +28,16 @@ export default function SettingsPage() {
   const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  // For this demo, we'll use a mock user ID
+
   const mockUserId = 'demo-user-id';
 
   useEffect(() => {
-    // Simulate loading for a realistic feel
     setTimeout(() => {
-      // Use hardcoded user data instead of fetching
       const hardcodedUser: User = {
         id: mockUserId,
         name: 'Abhinav Kale',
         email: 'abhinavkale19026166@gmail.com',
-        plan: 'free', // Default to free tier
+        plan: 'free', 
         createdAt: new Date().toISOString()
       };
       
@@ -53,20 +51,16 @@ export default function SettingsPage() {
       setUpdateSuccess(null);
       setUpdateError(null);
       
-      // Simulate API call with a timeout
       setTimeout(() => {
-        // Update local user state with new plan
         setUser(prev => prev ? { ...prev, plan: newPlan } : null);
         setUpdateSuccess(`Successfully updated to ${newPlan} plan`);
         
-        // Trigger notification via localStorage for cross-component communication
         if (user?.plan !== newPlan) {
           localStorage.setItem('planChange', JSON.stringify({
             plan: newPlan,
             timestamp: new Date().toISOString()
           }));
           
-          // This event won't trigger in the same window, so dispatch a custom event as well
           window.dispatchEvent(new StorageEvent('storage', {
             key: 'planChange',
             newValue: JSON.stringify({
@@ -76,7 +70,6 @@ export default function SettingsPage() {
           }));
         }
         
-        // Clear success message after 3 seconds
         setTimeout(() => {
           setUpdateSuccess(null);
         }, 3000);
@@ -98,7 +91,6 @@ export default function SettingsPage() {
     );
   }
 
-  // Define plan details
   const plans: PlanDetails[] = [
     {
       name: 'Free',

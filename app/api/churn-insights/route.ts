@@ -7,10 +7,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { userId, userData } = body;
     
-    // Handle direct user data mode (for AI prediction page)
     if (userData) {
       try {
-        // Validate required fields
         const { plan, daysSinceActivity, eventsLast30, revenueLast30, probability } = userData;
         
         if (!plan || daysSinceActivity === undefined || eventsLast30 === undefined || 
@@ -21,7 +19,6 @@ export async function POST(request: Request) {
           );
         }
         
-        // Generate AI insights directly from provided data
         const [explanationResult, strategiesResult] = await Promise.all([
           generateChurnExplanation(userData),
           generateRetentionStrategies(userData)
@@ -42,7 +39,6 @@ export async function POST(request: Request) {
       }
     }
     
-    // Regular mode requiring a userId
     if (!userId) {
       return NextResponse.json(
         { error: 'User ID or userData is required' },
@@ -50,7 +46,6 @@ export async function POST(request: Request) {
       );
     }
     
-    // Get user and their prediction
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -76,19 +71,15 @@ export async function POST(request: Request) {
       );
     }
     
-    // Calculate days since activity
     const lastActivity = user.activities[0]?.timestamp;
     const daysSinceActivity = lastActivity 
       ? Math.floor((Date.now() - lastActivity.getTime()) / (1000 * 60 * 60 * 24))
-      : 30; // Default to 30 if no activity
+      : 30; 
     
-    // Calculate revenue in last 30 days
     const revenueLast30 = user.activities.reduce((sum, activity) => sum + activity.revenue, 0);
     
-    // Calculate events in last 30 days
     const eventsLast30 = user.activities.length;
     
-    // Get AI-powered insights
     const userDataForAI = {
       plan: user.plan,
       daysSinceActivity,

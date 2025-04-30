@@ -6,7 +6,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'csv';
     
-    // Get all users with their churn predictions
     const users = await prisma.user.findMany({
       include: {
         churnPrediction: true,
@@ -16,7 +15,6 @@ export async function GET(request: Request) {
       },
     });
     
-    // Transform data for export
     const exportData = users.map(user => {
       const riskCategory = user.churnPrediction?.riskCategory || 'No prediction';
       const probability = user.churnPrediction?.probability || 0;
@@ -31,19 +29,15 @@ export async function GET(request: Request) {
       };
     });
     
-    // Convert to CSV
     let csvContent = '';
     
-    // Add headers
     if (exportData.length > 0) {
       const headers = Object.keys(exportData[0]);
       csvContent += headers.join(',') + '\n';
       
-      // Add data rows
       exportData.forEach(item => {
         const row = headers.map(header => {
           const value = item[header as keyof typeof item];
-          // Handle values with commas by wrapping in quotes
           return typeof value === 'string' && value.includes(',') 
             ? `"${value.replace(/"/g, '""')}"` 
             : value;
@@ -52,7 +46,6 @@ export async function GET(request: Request) {
       });
     }
     
-    // Set appropriate headers based on format
     const mimeType = format === 'excel' ? 'application/vnd.ms-excel' : 'text/csv';
     const filename = format === 'excel' ? 'churn-dashboard-data.xls' : 'churn-dashboard-data.csv';
     

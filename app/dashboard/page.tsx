@@ -75,7 +75,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter states
   const [planFilter, setPlanFilter] = useState<string>('all');
   const [riskFilter, setRiskFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
@@ -119,7 +118,6 @@ export default function DashboardPage() {
           queryParams.append('search', search);
         }
         
-        // Add filters to query params
         if (planFilter && planFilter !== 'all') {
           queryParams.append('plan', planFilter);
         }
@@ -159,12 +157,9 @@ export default function DashboardPage() {
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on new search
   };
 
-  // Function to handle download 
   const handleDownload = (format: 'csv' | 'excel') => {
-    // Use the API endpoint instead of client-side generation
     const downloadUrl = `/api/download-data?format=${format}`;
     
-    // Create a download link and trigger click
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.setAttribute('download', format === 'csv' ? 'churn-dashboard-data.csv' : 'churn-dashboard-data.xls');
@@ -174,7 +169,7 @@ export default function DashboardPage() {
   };
 
   const handleFilterApply = () => {
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on new filter
+    setPagination(prev => ({ ...prev, page: 1 })); 
     setIsFilterApplied(true);
   };
 
@@ -212,14 +207,12 @@ export default function DashboardPage() {
       const result = await response.json();
       alert(`Successfully imported ${result.importedCount} records from ${file.name}`);
       
-      // Refresh data
       window.location.reload();
     } catch (error) {
       console.error('Error importing file:', error);
       alert(`Error importing file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setImportLoading(false);
-      // Reset the file input
       e.target.value = '';
     }
   };

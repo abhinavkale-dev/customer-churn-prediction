@@ -19,9 +19,7 @@ export default function DashboardLayout({
   const [notificationCount, setNotificationCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  // Simulate fetching notifications on mount
   useEffect(() => {
-    // Mock notifications data
     const mockNotifications = [
       { 
         id: '1', 
@@ -34,7 +32,6 @@ export default function DashboardLayout({
     setNotificationCount(mockNotifications.length);
   }, []);
 
-  // Listen for plan changes from the settings page
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'planChange') {
@@ -64,8 +61,6 @@ export default function DashboardLayout({
   ];
   
   const handleLogout = () => {
-    // In a real app, you would handle auth logout here
-    // For now, just redirect to home page
     router.push('/');
   };
 

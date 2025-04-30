@@ -13,10 +13,8 @@ export async function GET(request: Request) {
     const riskCategory = searchParams.get('riskCategory') || '';
     const datePeriod = searchParams.get('datePeriod') || '';
     
-    // Calculate pagination values
     const skip = (page - 1) * limit;
     
-    // Create filter condition for search
     const where: Prisma.UserWhereInput = search 
       ? {
           OR: [
@@ -36,12 +34,10 @@ export async function GET(request: Request) {
         } 
       : {};
     
-    // Add plan filter if specified
     if (plan && plan !== 'all') {
       where.plan = plan;
     }
     
-    // Add date period filter
     if (datePeriod && datePeriod !== 'all') {
       const now = new Date();
       let fromDate: Date;
@@ -60,7 +56,7 @@ export async function GET(request: Request) {
           fromDate = subYears(now, 1);
           break;
         default:
-          fromDate = new Date(0); // Beginning of time
+          fromDate = new Date(0); 
       }
       
       where.createdAt = {
@@ -69,20 +65,16 @@ export async function GET(request: Request) {
       };
     }
     
-    // Prepare churn risk filter
     if (riskCategory && riskCategory !== 'all') {
       if (riskCategory === 'no_prediction') {
-        // Filter for users with no prediction
         where.churnPrediction = null;
       } else {
-        // Filter by specific risk category
         where.churnPrediction = {
           riskCategory
         };
       }
     }
     
-    // Get users with pagination
     const users = await prisma.user.findMany({
       where,
       include: {
@@ -95,7 +87,6 @@ export async function GET(request: Request) {
       },
     });
     
-    // Get total count for pagination info
     const total = await prisma.user.count({ where });
     
     return NextResponse.json({

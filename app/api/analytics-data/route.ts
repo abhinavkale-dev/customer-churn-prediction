@@ -3,7 +3,6 @@ import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // Get plan distribution
     const usersByPlan = await prisma.user.groupBy({
       by: ['plan'],
       _count: {
@@ -16,7 +15,6 @@ export async function GET() {
       count: item._count.id
     }));
     
-    // Get churn by plan data
     const churnFeatures = await prisma.churnFeature.findMany();
     
     const churnByPlanData = churnFeatures.reduce((acc, feature) => {
@@ -40,7 +38,6 @@ export async function GET() {
       return acc;
     }, [] as Array<{plan: string, churned: number, retained: number}>);
     
-    // Get activity vs churn data
     const activityRanges = [
       { min: 0, max: 10, label: '0-10 days' },
       { min: 11, max: 20, label: '11-20 days' },
@@ -61,17 +58,13 @@ export async function GET() {
       };
     });
     
-    // Get churn trend (we'll simulate this with calculated data)
-    // In a real app, you would aggregate data by month from your database
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
     const churnTrend = months.map(month => {
-      // Generate simulated churn rates based on actual data proportions
       const totalChurned = churnFeatures.filter(f => f.churned).length;
       const total = churnFeatures.length;
       const baseChurnRate = total > 0 ? (totalChurned / total) * 100 : 0;
       
-      // Add some randomness to create variation
-      const churnRate = baseChurnRate + (Math.random() * 4 - 2); // +/- 2%
+      const churnRate = baseChurnRate + (Math.random() * 4 - 2); 
       
       return {
         month,
@@ -79,7 +72,6 @@ export async function GET() {
       };
     });
     
-    // Get risk distribution from churn predictions
     const predictions = await prisma.churnPrediction.findMany();
     
     const riskCountMap = {

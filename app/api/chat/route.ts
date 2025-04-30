@@ -18,7 +18,6 @@ export async function POST(request: Request) {
   try {
     const { messages, context } = await request.json();
     
-    // Validate input
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json(
         { error: 'Invalid messages format' },
@@ -26,14 +25,12 @@ export async function POST(request: Request) {
       );
     }
     
-    // Use a system message to provide context and constraints
     const systemMessage = `You are a helpful assistant for a customer churn prediction application. 
     The current user is viewing information about ${context || 'churn analysis'}.
     Keep your responses brief, informative, and focused on helping the user understand churn analytics, 
     predictions, and retention strategies. Don't make up specific data about the user's company 
     unless explicitly provided in their question.`;
     
-    // Format messages for the OpenAI API
     const formattedMessages: ChatMessage[] = [
       { role: 'system', content: systemMessage },
       ...messages.map((msg: { role: string; content: string }) => ({
@@ -42,12 +39,11 @@ export async function POST(request: Request) {
       })),
     ];
     
-    // Generate response using the cheapest GPT model (gpt-3.5-turbo)
     const { text } = await generateText({
       model: openai('gpt-3.5-turbo'),
       messages: formattedMessages,
       temperature: 0.7,
-      maxTokens: 300, // Keep responses concise
+      maxTokens: 300,
     });
     
     return NextResponse.json({ message: text });

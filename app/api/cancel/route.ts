@@ -9,7 +9,6 @@ export async function POST(req: Request) {
   try {
     const { email, plan } = await req.json();
     
-    // 1. Find and mark subscription as canceled
     const subscription = await prisma.subscription.findFirst({
       where: { email, plan, canceledAt: null }
     });
@@ -21,13 +20,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // Update the subscription with cancellation date
     const updatedSubscription = await prisma.subscription.update({
       where: { id: subscription.id },
       data: { canceledAt: new Date() }
     });
 
-    // 2. Prepare email content
     const subject = `You've canceled your ${plan} plan`;
     const html = `
       <h1>Subscription Canceled</h1>
@@ -38,7 +35,6 @@ export async function POST(req: Request) {
     `;
     const text = `Subscription Canceled\n\nHi ${email},\nYour ${plan} plan has been canceled.\nWe're sorry to see you go. If you change your mind, you can always subscribe again.\n— The Churn Analysis Team`;
 
-    // 3. Send cancellation email via SES SDK
     const emailResult = await emailService.send({
       from: FROM_ADDRESS,
       to: [email],
@@ -47,7 +43,6 @@ export async function POST(req: Request) {
       text,
     });
 
-    // 4. Return subscription and email result
     return NextResponse.json({
       success: true,
       subscription: updatedSubscription,

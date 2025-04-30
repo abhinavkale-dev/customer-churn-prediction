@@ -5,7 +5,6 @@ const { join } = require('path');
 
 console.log('🧹 Resetting database and creating new seed data...');
 
-// Run the seedData.ts script using ts-node
 const seedProcess = spawn('npx', ['ts-node', join(__dirname, 'seedData.ts')], {
   stdio: 'inherit',
   shell: true

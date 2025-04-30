@@ -3,20 +3,17 @@ import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // Fetch users with their churn predictions
     const users = await prisma.user.findMany({
       include: {
         churnPrediction: true
       }
     });
 
-    // Calculate totals and risk categories
+    
     const totalCustomers = users.length;
     
-    // Users with churn predictions
     const usersWithPredictions = users.filter(user => user.churnPrediction);
     
-    // Count users by risk category
     const highRiskCount = usersWithPredictions.filter(
       user => user.churnPrediction?.riskCategory === 'High Risk'
     ).length;
@@ -29,7 +26,6 @@ export async function GET() {
       user => user.churnPrediction?.riskCategory === 'Low Risk'
     ).length;
     
-    // Get the 5 most recent predictions
     const recentPredictions = await prisma.churnPrediction.findMany({
       orderBy: {
         predictedAt: 'desc'
@@ -40,7 +36,6 @@ export async function GET() {
       }
     });
     
-    // Format the data for the response
     const formattedPredictions = recentPredictions.map(prediction => ({
       id: prediction.id,
       userId: prediction.userId,

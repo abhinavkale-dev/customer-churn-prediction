@@ -43,7 +43,7 @@ interface ChurnData {
   }[];
 }
 
-// Colors for charts
+
 const COLORS = {
   free: 'rgba(75, 192, 192, 0.7)',
   basic: 'rgba(54, 162, 235, 0.7)',
@@ -113,7 +113,7 @@ export default function AnalyticsPage() {
     );
   }
 
-  // Check if data is empty
+
   const hasData = churnData.planDistribution.length > 0 || 
                   churnData.churnByPlan.length > 0 || 
                   churnData.riskDistribution.length > 0;

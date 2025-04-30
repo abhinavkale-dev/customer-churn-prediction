@@ -3,21 +3,20 @@ import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
 
-// Explicit type for plan names
+
 type PlanType = 'free' | 'basic' | 'premium';
 
-// Constants for data generation
+
 const NUM_USERS = 1000;
 const PLANS: PlanType[] = ['free', 'basic', 'premium'];
 
-// Realistic plan distribution (freemium model)
 const PLAN_DISTRIBUTION: Record<PlanType, number> = {
-  free: 0.7,    // 70% free users
-  basic: 0.2,   // 20% basic users
-  premium: 0.1  // 10% premium users
+  free: 0.7,        
+  basic: 0.2,   
+  premium: 0.1  
 };
 
-// SaaS application realistic event types
+
 const EVENT_TYPES = [
   'login', 
   'create_document', 
@@ -33,28 +32,28 @@ const EVENT_TYPES = [
   'search'
 ];
 
-// Event frequency by plan (events per month on average)
+
 const EVENT_FREQUENCY: Record<PlanType, { min: number; max: number }> = {
   free: { min: 1, max: 15 },
   basic: { min: 10, max: 50 },
   premium: { min: 30, max: 150 }
 };
 
-// Realistic revenue values based on plan
+
 const REVENUE_VALUES: Record<PlanType, number> = {
   free: 0,
   basic: 100,
   premium: 300
 };
 
-// Retention rates by plan
+
 const RETENTION_RATES: Record<PlanType, number> = {
-  free: 0.4,    // 40% retention for free
-  basic: 0.7,   // 70% retention for basic
-  premium: 0.85 // 85% retention for premium
+  free: 0.4,    
+  basic: 0.7,   
+  premium: 0.85 
 };
 
-// Add realistic company domains
+
 const COMPANY_DOMAINS = [
   'acme.com', 'techwave.io', 'innovate.co', 'zenithdata.com', 'apollotech.net',
   'quantum-ai.com', 'fusion-labs.co', 'dataforge.io', 'stellarcloud.net', 'nexusanalytics.com',
@@ -62,7 +61,7 @@ const COMPANY_DOMAINS = [
   'brightpath.io', 'visionware.net', 'integritysoftware.co', 'peakconsulting.com', 'oasisdigital.io'
 ];
 
-// Add realistic user industries and associated churn rates
+
 const INDUSTRIES = [
   { name: 'Technology', churnRate: 0.12 },
   { name: 'Finance', churnRate: 0.08 },
@@ -80,7 +79,6 @@ async function seed() {
   try {
     console.log('🌱 Starting seed process...');
     
-    // Clear existing data
     console.log('Clearing existing data...');
     await prisma.activity.deleteMany({});
     await prisma.churnPrediction.deleteMany({});
@@ -89,13 +87,13 @@ async function seed() {
     
     console.log(`Creating ${NUM_USERS} users...`);
     
-    // Create a Set to track used emails
+   
     const usedEmails = new Set<string>();
     
-    // Create users with realistic plan distribution
+
     const users = [];
     for (let i = 0; i < NUM_USERS; i++) {
-      // Determine plan based on distribution
+
       const randValue = Math.random();
       let plan: PlanType;
       if (randValue < PLAN_DISTRIBUTION.free) {
@@ -106,7 +104,7 @@ async function seed() {
         plan = 'premium';
       }
       
-      // Create realistic registration date (most users join in last 6 months)
+
       const createdAt = faker.date.past({ years: Math.random() < 0.7 ? 0.5 : 1 });
       
       // Generate more realistic business email

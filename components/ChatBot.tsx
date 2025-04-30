@@ -60,7 +60,6 @@ export default function ChatBot() {
     }
   ];
 
-  // Get contextual information based on the current page
   const getContextFromPath = () => {
     if (pathname?.includes('/dashboard') && !pathname?.includes('/analytics') && !pathname?.includes('/churn-prediction') && !pathname?.includes('/settings')) {
       return 'dashboard overview showing churn metrics, risk distribution, and recent predictions';
@@ -74,7 +73,6 @@ export default function ChatBot() {
     return 'churn analysis application';
   };
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -84,7 +82,6 @@ export default function ChatBot() {
   const handleNavigationClick = (path: string) => {
     router.push(path);
     
-    // Add a message about the navigation
     const pageType = path.split('/').pop() || 'dashboard';
     const messageSuffix = path.includes('churn-prediction') 
       ? 'You can analyze customer churn risk here.'
@@ -108,14 +105,13 @@ export default function ChatBot() {
     
     if (!input.trim() || isLoading) return;
     
-    // Add user message
+
     const userMessage = { role: 'user' as const, content: input };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
     
     try {
-      // Context for the current page
       const context = getContextFromPath();
       
       const response = await fetch('/api/chat', {
@@ -136,7 +132,6 @@ export default function ChatBot() {
       
       const data = await response.json();
       
-      // Determine if we should show options based on the response content
       const showOptions = data.message.toLowerCase().includes('help you with') || 
                           data.message.toLowerCase().includes('assist you') ||
                           data.message.toLowerCase().includes('what would you like to');
@@ -158,16 +153,13 @@ export default function ChatBot() {
   };
 
   const handleQuickQuestion = (question: string) => {
-    // Add user message directly without setting input
     const userMessage = { role: 'user' as const, content: question };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     
     try {
-      // Context for the current page
       const context = getContextFromPath();
       
-      // Make API call directly instead of using handleSubmit
       fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -186,7 +178,6 @@ export default function ChatBot() {
         return response.json();
       })
       .then(data => {
-        // Determine if we should show options based on the response content
         const showOptions = data.message.toLowerCase().includes('help you with') || 
                            data.message.toLowerCase().includes('assist you') ||
                            data.message.toLowerCase().includes('what would you like to');

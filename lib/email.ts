@@ -8,7 +8,6 @@ interface EmailParams {
   text?: string;
 }
 
-// Initialize SES client with credentials and region from environment
 const sesClient = new SESClient({
   region: process.env.AWS_REGION!,
   credentials: {
@@ -19,7 +18,6 @@ const sesClient = new SESClient({
 
 export const emailService = {
   send: async ({ from, to, subject, html, text }: EmailParams) => {
-    // Log for debugging
     console.log("SES Sending via SDK:", {
       region: process.env.AWS_REGION,
       accessKeyPrefix: process.env.AWS_ACCESS_KEY_ID?.slice(0, 4) + "…",

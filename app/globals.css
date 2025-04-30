@@ -1,9 +1,5 @@
-/* app/globals.css */
-
-/* 1. Import Tailwind */
 @import "tailwindcss";
 
-/* 2. Define theme variables */
 @theme {
   /* Light mode */
   --color-background: hsl(0 0% 100%);
@@ -38,24 +34,22 @@
   --color-brand-light-purple: hsl(267 83% 59%);
 }
 
-/* 3. Dark mode configuration */
+
 @variant dark (&:where(.dark, .dark *));
 
-/* 4. Custom styles */
+
 @layer base {
-  /* Reset borders on every element */
   * {
     border: 0;
   }
 
-  /* Base <body> styling */
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
 }
 
-/* 5. (Optional) define actual utilities in case you want to use them directly */
+
 @layer utilities {
   .bg-background   { background-color: hsl(var(--color-background)); }
   .text-foreground { color:            hsl(var(--color-foreground)); }

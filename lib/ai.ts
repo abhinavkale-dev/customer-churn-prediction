@@ -1,13 +1,11 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateText, streamText } from 'ai';
 
-// Create OpenAI provider instance with strict mode for official API
 export const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   compatibility: 'strict',
 });
 
-// Function to generate predictions with explanations
 export async function generateChurnExplanation(userData: {
   plan: string;
   daysSinceActivity: number;
