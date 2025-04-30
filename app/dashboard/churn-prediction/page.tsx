@@ -335,7 +335,7 @@ export default function ChurnPredictionPage() {
                     <td className="px-4 py-3">
                       {user.churnPrediction ? (
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-block ${
                             user.churnPrediction.riskCategory === 'High Risk'
                               ? 'bg-red-100 text-red-800'
                               : user.churnPrediction.riskCategory === 'Medium Risk'
@@ -414,7 +414,7 @@ export default function ChurnPredictionPage() {
                         <td className="px-4 py-3">{prediction.email}</td>
                         <td className="px-4 py-3">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-block ${
                               prediction.riskCategory === 'High Risk'
                                 ? 'bg-red-100 text-red-800'
                                 : prediction.riskCategory === 'Medium Risk'

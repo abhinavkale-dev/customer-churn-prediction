@@ -456,7 +456,7 @@ export default function DashboardPage() {
                     <td className="px-4 py-3">{prediction.email}</td>
                     <td className="px-4 py-3">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-block ${
                           prediction.riskCategory === 'High Risk'
                             ? 'bg-red-100 text-red-800'
                             : prediction.riskCategory === 'Medium Risk'
@@ -575,6 +575,7 @@ export default function DashboardPage() {
                   <th className="px-4 py-2 text-left">Plan</th>
                   <th className="px-4 py-2 text-left">Created At</th>
                   <th className="px-4 py-2 text-left">Churn Risk</th>
+                  <th className="px-4 py-2 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -587,7 +588,7 @@ export default function DashboardPage() {
                     <td className="px-4 py-3">
                       {user.churnPrediction ? (
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-block ${
                             user.churnPrediction.riskCategory === 'High Risk'
                               ? 'bg-red-100 text-red-800'
                               : user.churnPrediction.riskCategory === 'Medium Risk'
@@ -600,6 +601,13 @@ export default function DashboardPage() {
                       ) : (
                         <span className="text-gray-400 text-xs">No prediction</span>
                       )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link href={`/dashboard/users/${user.id}`}>
+                        <Button variant="outline" size="sm" className="text-xs h-8">
+                          View Details
+                        </Button>
+                      </Link>
                     </td>
                   </tr>
                 ))}
