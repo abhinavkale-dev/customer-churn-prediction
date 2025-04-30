@@ -29,7 +29,7 @@ async function loadAndPreprocessData() {
   // Convert categorical features to numeric
   const features = shuffledData.map(d => [
     // Plan type: one-hot encoding
-    d.plan === 'free' ? 0 : 0,
+    d.plan === 'free' ? 1 : 0,
     d.plan === 'basic' ? 1 : 0,
     d.plan === 'premium' ? 1 : 0,
     // Numeric features
@@ -317,7 +317,11 @@ async function main() {
     } = await loadAndPreprocessData();
     
     // Build the model
-    const model = buildModel(trainFeatures.shape[1]);
+    const inputShape = trainFeatures.shape[1];
+    if (inputShape === undefined) {
+      throw new Error("Input shape is undefined");
+    }
+    const model = buildModel(inputShape);
     
     // Get sample weights for handling class imbalance
     const trainLabelValues = await trainLabels.data();
