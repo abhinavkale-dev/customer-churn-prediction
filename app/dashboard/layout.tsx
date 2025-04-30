@@ -86,8 +86,10 @@ export default function DashboardLayout({
                 </svg>
               </button>
               <div className="flex-shrink-0 flex items-center">
-                <span className="text-xl font-bold text-brand-purple hidden md:inline">Customer Churn Prediction</span>
-                <span className="text-xl font-bold text-brand-purple md:hidden">Churn Predictor</span>
+                <Link href="/">
+                  <span className="text-xl font-bold text-brand-purple hidden md:inline cursor-pointer">Customer Churn Prediction</span>
+                  <span className="text-xl font-bold text-brand-purple md:hidden cursor-pointer">Churn Predictor</span>
+                </Link>
               </div>
             </div>
             <div className="flex items-center">
