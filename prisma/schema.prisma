@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  plan      String   @default("free") // "free", "basic", "premium"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  activities     Activity[]
+  churnPrediction ChurnPrediction?
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  userId    String
+  eventType String
+  timestamp DateTime @default(now())
+  revenue   Float    @default(0)
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ChurnPrediction {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  probability      Float
+  willChurn        Boolean
+  riskCategory     String
+  predictedAt      DateTime @default(now())
+  
+  // Relations
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ChurnFeature {
+  id                String   @id @default(cuid())
+  plan              String // "free", "basic", "premium"
+  daysSinceActivity Int
+  eventsLast30      Int
+  revenueLast30     Float
+  churned           Boolean
+  createdAt         DateTime @default(now())
+}
+
+model DailyReport {
+  id              Int      @id @default(autoincrement())
+  reportDate      DateTime @unique
+  total           Int
+  churned         Int
+  churnRate       Float
+  avgDaysActivity Float
+  byPlan          Json
+}
+
+model Subscription {
+  id           Int      @id @default(autoincrement())
+  email        String
+  plan         String
+  subscribedAt DateTime @default(now())
+  canceledAt   DateTime?
+} 
