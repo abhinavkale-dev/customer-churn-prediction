@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     description: 'Advanced analytics for predicting and preventing customer churn',
     images: [
       {
-        url: '/public/customer-churn-landing.png',
+        url: '/customer-churn-landing.png',
         width: 1200,
         height: 630,
         alt: 'Customer Churn Landing Page',
