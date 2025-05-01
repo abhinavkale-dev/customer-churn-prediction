@@ -28,7 +28,6 @@ export default function ChurnPredictionPage() {
   const [isPredicting, setIsPredicting] = useState(false);
   const [hasPredicted, setHasPredicted] = useState(false);
   
-  // Track optimistic predictions for visual indicators
   const [optimisticPredictions, setOptimisticPredictions] = useState<Record<string, boolean>>({});
   
   const {
@@ -49,7 +48,6 @@ export default function ChurnPredictionPage() {
     data: predictData
   } = usePredictAllChurn();
 
-  // Memoize users and pagination to prevent unnecessary rerenders
   const users = useMemo(() => data?.users || [], [data?.users]);
   const pagination = useMemo(() => data?.pagination || { 
     total: 0, page: 1, limit: 10, totalPages: 1 
@@ -57,7 +55,6 @@ export default function ChurnPredictionPage() {
   const predictions = useMemo(() => predictData?.predictions || [], 
     [predictData?.predictions]);
 
-  // Handle success message with stable cleanup function
   useEffect(() => {
     if (!successMessage) return;
     
@@ -68,16 +65,13 @@ export default function ChurnPredictionPage() {
     return () => clearTimeout(timer);
   }, [successMessage]);
   
-  // Handle prediction status with stable cleanup function
   useEffect(() => {
     if (!isPredicting) return;
     
     const timer = setTimeout(() => {
       setIsPredicting(false);
       
-      // Only refetch once after prediction completes
       if (!hasPredicted) {
-        // Use a small delay to avoid race conditions
         setTimeout(() => {
           refetch();
           setHasPredicted(true);
@@ -88,31 +82,23 @@ export default function ChurnPredictionPage() {
     return () => clearTimeout(timer);
   }, [isPredicting, hasPredicted, refetch]);
 
-  // Create an optimistic update for prediction
   const createOptimisticPredictions = useCallback(() => {
     if (!data?.users?.length) return [];
     
-    // Create optimistic predictions based on current users
     const predictions = data.users.map(user => {
-      // Generate a prediction based on simple heuristics
       let probability = 0.5;
       
-      // Plan-based adjustment
       if (user.plan === 'free') probability += 0.1;
       if (user.plan === 'premium') probability -= 0.1;
       
-      // Activity-based adjustment
       if (user.daysSinceActivity > 20) probability += 0.15;
       if (user.daysSinceActivity < 5) probability -= 0.15;
       
-      // Engagement-based adjustment
       if (user.eventsLast30 > 50) probability -= 0.1;
       if (user.eventsLast30 < 10) probability += 0.1;
       
-      // Clamp probability
       probability = Math.max(0.1, Math.min(0.9, probability));
       
-      // Determine risk category
       let riskCategory = 'Medium Risk';
       if (probability > 0.7) riskCategory = 'High Risk';
       if (probability < 0.4) riskCategory = 'Low Risk';
@@ -127,7 +113,6 @@ export default function ChurnPredictionPage() {
       };
     });
     
-    // Update optimistic predictions tracking
     const optimistic: Record<string, boolean> = {};
     predictions.forEach(p => {
       optimistic[p.userId] = true;
@@ -137,7 +122,6 @@ export default function ChurnPredictionPage() {
     return predictions;
   }, [data?.users]);
 
-  // Stable callback functions
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
   }, []);
@@ -153,25 +137,20 @@ export default function ChurnPredictionPage() {
   }, []);
 
   const handlePredictAll = useCallback(() => {
-    // Prevent multiple predictions
     if (isPredicting || predictLoading) return;
     
     setSuccessMessage(null);
     setIsPredicting(true);
     setHasPredicted(false);
     
-    // Generate optimistic predictions that will be shown in the UI
     createOptimisticPredictions();
     
-    // Log that we're starting the prediction
     console.log('Starting prediction for all users...');
     
-    // Show initial toast
     const toastId = toast.loading('Predicting churn for all users...', {
       duration: Infinity,
     });
     
-    // Schedule a follow-up toast after 5 seconds
     setTimeout(() => {
       toast.loading('Prediction in progress, this may take up to a minute...', {
         id: toastId,
@@ -179,7 +158,6 @@ export default function ChurnPredictionPage() {
       });
     }, 5000);
     
-    // Create a timeout to ensure we update the UI even if the request hangs
     const timeoutId = setTimeout(() => {
       console.log('Prediction request is taking longer than expected...');
       toast.loading('Prediction is taking longer than expected. Processing in the background...', {
@@ -191,7 +169,6 @@ export default function ChurnPredictionPage() {
       setIsPredicting(false);
       setHasPredicted(true);
       
-      // Force a refetch after a longer delay
       setTimeout(() => {
         console.log('Forcing refetch to check prediction results...');
         refetch().then(() => {
@@ -200,18 +177,16 @@ export default function ChurnPredictionPage() {
             duration: 3000,
           });
         });
-      }, 10000); // Try refetching after 10 seconds
-    }, 30000); // Set timeout for 30 seconds
+      }, 10000);
+    }, 30000);
     
     predictAll(undefined, {
       onSuccess: (data) => {
-        // Clear the timeout since we got a response
         clearTimeout(timeoutId);
         
         const count = data?.predictions?.length || 0;
         console.log(`Prediction completed for ${count} users`);
         
-        // Get risk distribution
         if (data?.predictions?.length) {
           const highRisk = data.predictions.filter((p: any) => p.riskCategory === 'High Risk').length;
           const mediumRisk = data.predictions.filter((p: any) => p.riskCategory === 'Medium Risk').length;
@@ -224,7 +199,6 @@ export default function ChurnPredictionPage() {
           
           setSuccessMessage(successMsg);
           
-          // Update toast
           toast.success(successMsg, {
             id: toastId,
             duration: 5000,
@@ -239,25 +213,21 @@ export default function ChurnPredictionPage() {
         }
       },
       onError: (error) => {
-        // Clear the timeout since we got a response
         clearTimeout(timeoutId);
         
         console.error('Prediction failed:', error);
         const errorMsg = `Prediction encountered an error: ${error.message || 'Unknown error'}. A partial prediction may have been completed.`;
         setSuccessMessage(errorMsg);
         
-        // Update toast
         toast.error(errorMsg, {
           id: toastId,
           duration: 5000,
         });
       },
       onSettled: () => {
-        // This runs on both success and error
         setIsPredicting(false);
         setHasPredicted(true);
         
-        // Refetch data to show latest predictions
         setTimeout(() => {
           refetch();
         }, 500);
@@ -265,10 +235,8 @@ export default function ChurnPredictionPage() {
     });
   }, [isPredicting, predictLoading, predictAll, refetch, createOptimisticPredictions]);
 
-  // Clear optimistic predictions when predictions are complete
   useEffect(() => {
     if (!isPredicting && hasPredicted) {
-      // Clear optimistic predictions after a delay
       const timer = setTimeout(() => {
         setOptimisticPredictions({});
       }, 1000);
@@ -277,7 +245,6 @@ export default function ChurnPredictionPage() {
     }
   }, [isPredicting, hasPredicted]);
 
-  // Add a function to check if a prediction is optimistic
   const isOptimistic = useCallback((userId: string) => {
     return optimisticPredictions[userId] === true;
   }, [optimisticPredictions]);

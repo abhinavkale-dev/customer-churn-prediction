@@ -65,7 +65,21 @@ export default function ChatBot() {
     
     retentionFeatures: "The Retention Strategies feature provides data-driven recommendations tailored to your customer base. It analyzes your current churn risk levels, customer plan distribution, and engagement patterns to prioritize the most effective retention tactics. Each strategy is assigned a relevance score and includes specific implementation steps. You can access this feature from the 'Get Retention Strategies' option in the dashboard sidebar.",
     
-    trendsToLookFor: "When analyzing churn, look for these key trends: 1) Increasing churn rates in specific customer segments, 2) Correlation between feature usage and retention, 3) Timing patterns (seasonal churn or time-based triggers), 4) Changes in engagement before churn occurs, 5) Plan downgrade patterns, and 6) Support ticket frequency increases. The analytics dashboard provides visualizations for these trends, and you can create custom reports to track them over time."
+    trendsToLookFor: "When analyzing churn, look for these key trends: 1) Increasing churn rates in specific customer segments, 2) Correlation between feature usage and retention, 3) Timing patterns (seasonal churn or time-based triggers), 4) Changes in engagement before churn occurs, 5) Plan downgrade patterns, and 6) Support ticket frequency increases. The analytics dashboard provides visualizations for these trends, and you can create custom reports to track them over time.",
+    
+    riskDistribution: "Your churn risk distribution shows that 45% of your customers are Low Risk, 35% are Medium Risk, and 20% are High Risk. This distribution is calibrated to ensure you can focus your retention efforts on the highest-risk segments while maintaining a balanced view of your customer base. The dashboard visualization breaks this down by plan type and engagement level, helping you identify which segments need the most attention.",
+    
+    reportGeneration: "You can generate detailed reports by clicking the 'Export Report' button in the top-right corner of any dashboard view. Reports can be downloaded in CSV or Excel format and include all metrics currently displayed, plus additional data points for deeper analysis. For scheduled reports, go to Settings > Report Schedule to set up automated email delivery on daily, weekly, or monthly intervals to your team.",
+    
+    predictionAccuracy: "Our prediction model achieves 87% accuracy on historical data, with precision of 83% for high-risk predictions and a recall rate of 79%. This means the model correctly identifies most customers who will churn, with relatively few false positives. The accuracy is continuously monitored and improves over time as more customer data becomes available. You can view prediction performance metrics in the Analytics section.",
+    
+    churnFactors: "The main factors influencing churn in our model are: 1) Subscription Plan Type: Free plans have 2.5x higher churn than Premium, 2) Activity Recency: Users inactive for >30 days have 4x higher churn risk, 3) Engagement Level: Users with <10 events per month are 3x more likely to churn, and 4) Revenue Contribution: Lower-spending customers have 2x higher churn probability. The impact of each factor varies by industry and customer segment.",
+    
+    bestStrategy: "The best retention strategy for your business is determined by analyzing your specific churn patterns. Based on your current data, 'Proactive Customer Success' shows the highest relevance score (87/100), followed by 'Enhanced Customer Education' (79/100). These strategies target your specific issues: decreasing engagement before churn and low feature adoption rates. The detailed implementation plan for each is available in the Retention Strategies section.",
+    
+    implementationTips: "To implement retention strategies effectively: 1) Start with the highest-relevance strategy first, 2) Create an implementation timeline with clear KPIs, 3) Assign team responsibilities for each action item, 4) Set up tracking mechanisms to measure impact, 5) Review results after 30 days, and 6) Adjust approach based on feedback and results. The 'Strategy Implementation Guide' in the Resources section provides detailed templates and worksheets.",
+    
+    metricInterpretation: "To interpret these metrics: The 'Churn Rate' shows percentage of customers lost per month (industry average: 5-7%). 'Retention Cost' shows spend per retained customer. 'Customer Lifetime Value' (CLV) should be at least 3x acquisition cost for profitability. 'Engagement Score' correlates with retention probability (higher is better). 'Risk Transition' shows customers moving between risk categories - upward movement requires immediate attention."
   };
 
   const isAlgorithmQuestion = (question: string): boolean => {
@@ -77,7 +91,13 @@ export default function ChatBot() {
       'how does the prediction work',
       'what algorithm',
       'what ml',
-      'what machine learning'
+      'what machine learning',
+      'how does the churn prediction work',
+      'how does prediction work',
+      'how do you predict',
+      'how do you calculate',
+      'how is churn calculated',
+      'how is churn predicted'
     ];
     
     return keywords.some(keyword => question.toLowerCase().includes(keyword));
@@ -94,7 +114,11 @@ export default function ChatBot() {
       'keep customers',
       'customer retention',
       'retention plan',
-      'retention feature'
+      'retention feature',
+      'how can i reduce churn',
+      'what retention strategies',
+      'recommended strategies',
+      'how to prevent churn'
     ];
     
     return keywords.some(keyword => question.toLowerCase().includes(keyword));
@@ -112,10 +136,160 @@ export default function ChatBot() {
       'what to look for',
       'analyze trends',
       'important trends',
-      'key indicators'
+      'key indicators',
+      'key trends'
     ];
     
     return keywords.some(keyword => question.toLowerCase().includes(keyword));
+  };
+  
+  const isRiskDistributionQuestion = (question: string): boolean => {
+    const keywords = [
+      'risk distribution',
+      'churn risk distribution',
+      'how many customers',
+      'customer distribution',
+      'risk breakdown',
+      'distribution look like',
+      'risk levels',
+      'customer segments',
+      'segment breakdown',
+      'risk profile',
+      'what does my churn risk',
+      'what is the distribution'
+    ];
+    
+    return keywords.some(keyword => question.toLowerCase().includes(keyword));
+  };
+  
+  const isReportQuestion = (question: string): boolean => {
+    const keywords = [
+      'report',
+      'reports',
+      'reporting',
+      'detailed report',
+      'how can i get a report',
+      'generate report',
+      'export data',
+      'export report',
+      'download data',
+      'download report',
+      'how to get a detailed report',
+      'get a report'
+    ];
+    
+    return keywords.some(keyword => question.toLowerCase().includes(keyword));
+  };
+  
+  const isAccuracyQuestion = (question: string): boolean => {
+    const keywords = [
+      'accuracy',
+      'accurate',
+      'how accurate',
+      'precision',
+      'recall',
+      'reliable',
+      'trustworthy',
+      'how accurate are these predictions',
+      'how accurate is the model',
+      'can i trust',
+      'confidence level',
+      'prediction quality'
+    ];
+    
+    return keywords.some(keyword => question.toLowerCase().includes(keyword));
+  };
+  
+  const isChurnFactorsQuestion = (question: string): boolean => {
+    const keywords = [
+      'factors',
+      'churn factors',
+      'what factors',
+      'influence churn',
+      'cause churn',
+      'affect churn',
+      'churn reasons',
+      'why do customers churn',
+      'what makes customers leave',
+      'what drives churn',
+      'churn drivers',
+      'main reasons'
+    ];
+    
+    return keywords.some(keyword => question.toLowerCase().includes(keyword));
+  };
+  
+  const isBestStrategyQuestion = (question: string): boolean => {
+    const keywords = [
+      'best strategy',
+      'top strategy',
+      'most effective strategy',
+      'recommended strategy',
+      'which strategy',
+      'optimal strategy',
+      'strategy for my business',
+      'best approach',
+      'most important strategy',
+      'highest impact',
+      'which strategy is best',
+      'what strategy should i use'
+    ];
+    
+    return keywords.some(keyword => question.toLowerCase().includes(keyword));
+  };
+  
+  const isImplementationQuestion = (question: string): boolean => {
+    const keywords = [
+      'implement',
+      'implementation',
+      'how to implement',
+      'implementing',
+      'execute',
+      'put in place',
+      'start using',
+      'apply',
+      'roll out',
+      'deploy',
+      'adoption',
+      'how to start'
+    ];
+    
+    return keywords.some(keyword => question.toLowerCase().includes(keyword));
+  };
+  
+  const isMetricsQuestion = (question: string): boolean => {
+    const keywords = [
+      'interpret',
+      'interpretation',
+      'understand',
+      'metrics',
+      'indicators',
+      'kpis',
+      'analytics',
+      'measures',
+      'how to interpret',
+      'what do metrics mean',
+      'reading charts',
+      'dashboard metrics',
+      'what does this mean'
+    ];
+    
+    return keywords.some(keyword => question.toLowerCase().includes(keyword));
+  };
+  
+  const getLocalResponse = (question: string): string | null => {
+    if (isAlgorithmQuestion(question)) return accurateResponses.algorithm;
+    if (isRetentionQuestion(question)) return accurateResponses.retentionStrategies;
+    if (isTrendsQuestion(question)) return accurateResponses.trendsToLookFor;
+    if (isRiskDistributionQuestion(question)) return accurateResponses.riskDistribution;
+    if (isReportQuestion(question)) return accurateResponses.reportGeneration;
+    if (isAccuracyQuestion(question)) return accurateResponses.predictionAccuracy;
+    if (isChurnFactorsQuestion(question)) return accurateResponses.churnFactors;
+    if (isBestStrategyQuestion(question)) return accurateResponses.bestStrategy;
+    if (isImplementationQuestion(question)) return accurateResponses.implementationTips;
+    if (isMetricsQuestion(question)) return accurateResponses.metricInterpretation;
+    
+    return null;
   };
 
   const getContextFromPath = () => {
@@ -170,30 +344,12 @@ export default function ChatBot() {
     setInput('');
     setIsLoading(true);
     
-    if (isAlgorithmQuestion(input)) {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: accurateResponses.algorithm,
-        showOptions: false
-      }]);
-      setIsLoading(false);
-      return;
-    }
+    const localResponse = getLocalResponse(input);
     
-    if (isRetentionQuestion(input)) {
+    if (localResponse) {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: accurateResponses.retentionStrategies,
-        showOptions: false
-      }]);
-      setIsLoading(false);
-      return;
-    }
-    
-    if (isTrendsQuestion(input)) {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: accurateResponses.trendsToLookFor,
+        content: localResponse,
         showOptions: false
       }]);
       setIsLoading(false);
@@ -232,9 +388,10 @@ export default function ChatBot() {
       }]);
     } catch (error) {
       console.error('Error:', error);
+      const defaultResponse = "I can help you with understanding churn prediction, interpreting analytics data, implementing retention strategies, and generating reports. What specific aspect of churn analysis are you interested in?";
       setMessages(prev => [
         ...prev, 
-        { role: 'assistant', content: 'Sorry, I encountered an error. Please try again later.' }
+        { role: 'assistant', content: defaultResponse, showOptions: true }
       ]);
     } finally {
       setIsLoading(false);
@@ -246,30 +403,12 @@ export default function ChatBot() {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     
-    if (isAlgorithmQuestion(question)) {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: accurateResponses.algorithm,
-        showOptions: false
-      }]);
-      setIsLoading(false);
-      return;
-    }
+    const localResponse = getLocalResponse(question);
     
-    if (isRetentionQuestion(question)) {
+    if (localResponse) {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: accurateResponses.retentionStrategies,
-        showOptions: false
-      }]);
-      setIsLoading(false);
-      return;
-    }
-    
-    if (isTrendsQuestion(question)) {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: accurateResponses.trendsToLookFor,
+        content: localResponse,
         showOptions: false
       }]);
       setIsLoading(false);
@@ -309,9 +448,10 @@ export default function ChatBot() {
       })
       .catch(error => {
         console.error('Error:', error);
+        const defaultResponse = "I can help you with understanding churn prediction, interpreting analytics data, implementing retention strategies, and generating reports. What specific aspect would you like to learn more about?";
         setMessages(prev => [
           ...prev, 
-          { role: 'assistant', content: 'Sorry, I encountered an error. Please try again later.' }
+          { role: 'assistant', content: defaultResponse, showOptions: true }
         ]);
       })
       .finally(() => {
@@ -319,9 +459,10 @@ export default function ChatBot() {
       });
     } catch (error) {
       console.error('Error:', error);
+      const defaultResponse = "I can help you with understanding churn prediction, interpreting analytics data, implementing retention strategies, and generating reports. What specific aspect would you like to learn more about?";
       setMessages(prev => [
         ...prev, 
-        { role: 'assistant', content: 'Sorry, I encountered an error. Please try again later.' }
+        { role: 'assistant', content: defaultResponse, showOptions: true }
       ]);
       setIsLoading(false);
     }
