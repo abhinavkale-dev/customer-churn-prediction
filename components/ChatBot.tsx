@@ -17,7 +17,7 @@ interface NavigationOption {
 }
 
 export default function ChatBot() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); 
   const [messages, setMessages] = useState<Message[]>([
     { 
       role: 'assistant', 
@@ -63,7 +63,9 @@ export default function ChatBot() {
     
     retentionStrategies: "Our system offers personalized retention strategies based on your customer data. We analyze factors like high-risk percentages, customer plan distribution, and user activity to recommend the most effective strategies for your specific situation. The strategies include Personalized Onboarding, Proactive Customer Success, Value-Driven Feature Updates, Loyalty Programs, Enhanced Customer Education, and Win-Back Campaigns. Each strategy comes with detailed implementation steps and is ranked by its relevance to your business situation.",
     
-    retentionFeatures: "The Retention Strategies feature provides data-driven recommendations tailored to your customer base. It analyzes your current churn risk levels, customer plan distribution, and engagement patterns to prioritize the most effective retention tactics. Each strategy is assigned a relevance score and includes specific implementation steps. You can access this feature from the 'Get Retention Strategies' option in the dashboard sidebar."
+    retentionFeatures: "The Retention Strategies feature provides data-driven recommendations tailored to your customer base. It analyzes your current churn risk levels, customer plan distribution, and engagement patterns to prioritize the most effective retention tactics. Each strategy is assigned a relevance score and includes specific implementation steps. You can access this feature from the 'Get Retention Strategies' option in the dashboard sidebar.",
+    
+    trendsToLookFor: "When analyzing churn, look for these key trends: 1) Increasing churn rates in specific customer segments, 2) Correlation between feature usage and retention, 3) Timing patterns (seasonal churn or time-based triggers), 4) Changes in engagement before churn occurs, 5) Plan downgrade patterns, and 6) Support ticket frequency increases. The analytics dashboard provides visualizations for these trends, and you can create custom reports to track them over time."
   };
 
   const isAlgorithmQuestion = (question: string): boolean => {
@@ -93,6 +95,24 @@ export default function ChatBot() {
       'customer retention',
       'retention plan',
       'retention feature'
+    ];
+    
+    return keywords.some(keyword => question.toLowerCase().includes(keyword));
+  };
+
+  const isTrendsQuestion = (question: string): boolean => {
+    const keywords = [
+      'trends',
+      'what trends',
+      'look for trends',
+      'trends to watch',
+      'patterns',
+      'what patterns',
+      'what should i look for',
+      'what to look for',
+      'analyze trends',
+      'important trends',
+      'key indicators'
     ];
     
     return keywords.some(keyword => question.toLowerCase().includes(keyword));
@@ -170,6 +190,16 @@ export default function ChatBot() {
       return;
     }
     
+    if (isTrendsQuestion(input)) {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: accurateResponses.trendsToLookFor,
+        showOptions: false
+      }]);
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       const context = getContextFromPath();
       
@@ -230,6 +260,16 @@ export default function ChatBot() {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: accurateResponses.retentionStrategies,
+        showOptions: false
+      }]);
+      setIsLoading(false);
+      return;
+    }
+    
+    if (isTrendsQuestion(question)) {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: accurateResponses.trendsToLookFor,
         showOptions: false
       }]);
       setIsLoading(false);

@@ -5,6 +5,7 @@
   "framework": "nextjs",
   "env": {
     "NODE_OPTIONS": "--max-old-space-size=4096",
-    "NEXT_PUBLIC_BASE_URL": "https://churn.abhinavkale.tech"
+    "NEXT_PUBLIC_BASE_URL": "https://churn.abhinavkale.tech",
+    "OPENAI_API_KEY": "${OPENAI_API_KEY}"
   }
 } 
