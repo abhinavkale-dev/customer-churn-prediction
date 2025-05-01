@@ -25,7 +25,7 @@ The Customer Churn Prediction Platform is a powerful SaaS application built with
 - **Batch Processing**: Handles up to 1000 users at once with efficient batch processing
 - **Dashboard Analytics**: Visualize churn metrics with customizable KPI cards
 - **Real-time Alerts**: Get notified about high-risk customers automatically
-- **Automatic Distribution Calibration**: Ensures predictions maintain desired risk distribution (45% Low, 35% Medium, 20% High)
+- **Automatic Distribution Calibration**: Ensures predictions maintain desired risk distribution
 - **Revenue Optimization**: Correctly calculates revenue based on subscription plans
 - **User Management**: Track and manage user activity and subscription status
 
@@ -98,6 +98,13 @@ npm run dev
 
 ## 🧠 Machine Learning Model Regression Model Architecture
 
+<div align="center">
+<img src="public/churn-prediction.png" alt="Churn Prediction Model" width="100%" />
+<br />
+<sub><b>Churn Prediction Model - Training process and prediction visualization</b></sub>
+</div>
+
+<br />
 
 - **Framework**: Uses the ml-regression library for efficient modeling
 - **Architecture**: Multivariate Linear Regression model that:
