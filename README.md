@@ -20,13 +20,13 @@ The Customer Churn Prediction Platform is a powerful SaaS application built with
 
 ### 🔍 Key Features
 
-- **Predictive Churn Analytics**: Identify at-risk customers before they leave
-- **Customer Segmentation**: Categorize users into risk categories (Low, Medium, High)
+- **Data-Driven Churn Prediction**: Identify at-risk customers using rule-based analytics
+- **Customer Segmentation**: Categorize users into risk categories (Low 45%, Medium 35%, High 20%)
 - **Visual Dashboard**: Comprehensive view of churn metrics and KPIs
-- **Personalized Retention Strategies**: AI-driven recommendations tailored to your business
+- **Personalized Retention Strategies**: Data-driven recommendations tailored to your business
 - **Data Import/Export**: CSV and Excel report generation for deeper analysis
 - **Email Reports**: Schedule and send automated reports to stakeholders
-- **AI-Powered Chatbot**: Interactive assistant for contextual help and insights
+- **Optimized Batch Processing**: Efficient handling of large datasets with 100-user batches
 
 ## 🛠️ Tech Stack
 
@@ -44,13 +44,16 @@ The Customer Churn Prediction Platform is a powerful SaaS application built with
 
 The application includes several API routes:
 
+- `/api` - API status endpoint
 - `/api/users` - User management
 - `/api/dashboard-data` - Dashboard metrics
 - `/api/churn-prediction` - Run churn predictions
 - `/api/import-data` - Import user data
 - `/api/download-data` - Export data
 - `/api/email-reports` - Generate and send email reports
-- `/api/chat` - AI-powered chatbot interactions
+- `/api/chat` - Interactive chatbot
+- `/api/analytics-data` - Analytics metrics
+- `/api/analysis` - Detailed data analysis
 
 ## 📊 Dashboard Sections
 
@@ -63,8 +66,9 @@ The platform is organized into logical sections for comprehensive churn manageme
 
 ### Churn Prediction
 - Predict churn probability for individual customers
-- Batch prediction for all customers
+- Batch prediction for all customers (processed in batches of 100)
 - Detailed explanation of prediction factors
+- Optimistic UI updates while predictions are processing
 
 ### Customer Analytics
 - Customer behavior trends and patterns
@@ -81,31 +85,37 @@ The platform is organized into logical sections for comprehensive churn manageme
 - Detailed user profiles
 - Activity tracking and engagement metrics
 
+## 🔄 Data Processing Architecture
+
+### Batch Processing
+- Large datasets are automatically processed in batches of 100 users
+- Progress tracking with detailed logging
+- Optimistic UI updates for improved user experience
+- Request throttling to prevent duplicate operations
+- Session storage caching for better performance
+
+### Churn Prediction Approach
+- Data-driven rule-based algorithm
+- Risk categorization follows industry standard distribution (Low 45%, Medium 35%, High 20%)
+- Prediction considers factors like:
+  - Days since last activity
+  - Engagement metrics (events in last 30 days)
+  - Subscription plan type
+  - Revenue patterns
+
+### Performance Optimizations
+- Request throttling to prevent redundant predictions
+- Batched database operations for efficiency
+- Parallel processing with Promise.all
+- UI responsiveness with optimistic updates
+- Proper cleanup of React effects to prevent memory leaks
+
 ## 📱 Responsive Design
 
 The platform is fully responsive and works seamlessly on:
 - Desktop monitors
 - Tablets
 - Mobile devices
-
-## 💬 Interactive Chatbot Assistant
-
-An in-app AI chatbot provides:
-- Contextual help based on the current page
-- Answers to questions about churn prediction
-- Guidance on using platform features
-- Quick navigation to relevant sections
-- Detailed explanations of churn factors and retention strategies
-- Route-specific quick questions for efficient information retrieval
-
-## 🔄 Data Flow
-
-1. **Import customer data** from CSV files or connect to your data source
-2. **Analyze user behavior patterns** and engagement metrics
-3. **Generate churn probability scores** for each customer
-4. **Categorize users** into risk segments
-5. **Recommend retention strategies** based on risk profiles
-6. **Monitor effectiveness** of implemented strategies
 
 ## 🚀 Getting Started
 

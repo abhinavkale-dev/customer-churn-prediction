@@ -1,44 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import { useChurnPredictionUsers, usePredictAllChurn } from '@/lib/hooks/use-query-hooks';
+import { toast } from 'sonner';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  plan: string;
-  createdAt: string;
-  churnPrediction?: {
-    id: string;
-    probability: number;
-    willChurn: boolean;
-    riskCategory: string;
-    predictedAt: string;
-  } | null;
-}
-
-interface UserWithActivity {
-  id: string;
-  name: string;
-  email: string;
-  plan: string;
-  daysSinceActivity: number;
-  eventsLast30: number;
-  revenueLast30: number;
-  createdAt: string;
-  churnPrediction?: {
-    id: string;
-    probability: number;
-    willChurn: boolean;
-    riskCategory: string;
-    predictedAt: string;
-  } | null;
-}
 
 interface PredictionResult {
   userId: string;
@@ -49,12 +18,6 @@ interface PredictionResult {
   riskCategory: string;
 }
 
-interface PaginationInfo {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
 
 export default function ChurnPredictionPage() {
   const [page, setPage] = useState(1);
@@ -63,11 +26,16 @@ export default function ChurnPredictionPage() {
   const [searchInputValue, setSearchInputValue] = useState('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isPredicting, setIsPredicting] = useState(false);
-
+  const [hasPredicted, setHasPredicted] = useState(false);
+  
+  // Track optimistic predictions for visual indicators
+  const [optimisticPredictions, setOptimisticPredictions] = useState<Record<string, boolean>>({});
+  
   const {
     data,
     isLoading,
-    error
+    error,
+    refetch
   } = useChurnPredictionUsers({
     page,
     limit,
@@ -81,40 +49,238 @@ export default function ChurnPredictionPage() {
     data: predictData
   } = usePredictAllChurn();
 
+  // Memoize users and pagination to prevent unnecessary rerenders
+  const users = useMemo(() => data?.users || [], [data?.users]);
+  const pagination = useMemo(() => data?.pagination || { 
+    total: 0, page: 1, limit: 10, totalPages: 1 
+  }, [data?.pagination]);
+  const predictions = useMemo(() => predictData?.predictions || [], 
+    [predictData?.predictions]);
+
+  // Handle success message with stable cleanup function
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    if (!successMessage) return;
     
-    if (isPredicting) {
-      timer = setTimeout(() => {
-        setIsPredicting(false);
-      }, 3000);
-    }
+    const timer = setTimeout(() => {
+      setSuccessMessage(null);
+    }, 5000);
     
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [isPredicting]);
+    return () => clearTimeout(timer);
+  }, [successMessage]);
+  
+  // Handle prediction status with stable cleanup function
+  useEffect(() => {
+    if (!isPredicting) return;
+    
+    const timer = setTimeout(() => {
+      setIsPredicting(false);
+      
+      // Only refetch once after prediction completes
+      if (!hasPredicted) {
+        // Use a small delay to avoid race conditions
+        setTimeout(() => {
+          refetch();
+          setHasPredicted(true);
+        }, 500);
+      }
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, [isPredicting, hasPredicted, refetch]);
 
-  const handlePageChange = (newPage: number) => {
+  // Create an optimistic update for prediction
+  const createOptimisticPredictions = useCallback(() => {
+    if (!data?.users?.length) return [];
+    
+    // Create optimistic predictions based on current users
+    const predictions = data.users.map(user => {
+      // Generate a prediction based on simple heuristics
+      let probability = 0.5;
+      
+      // Plan-based adjustment
+      if (user.plan === 'free') probability += 0.1;
+      if (user.plan === 'premium') probability -= 0.1;
+      
+      // Activity-based adjustment
+      if (user.daysSinceActivity > 20) probability += 0.15;
+      if (user.daysSinceActivity < 5) probability -= 0.15;
+      
+      // Engagement-based adjustment
+      if (user.eventsLast30 > 50) probability -= 0.1;
+      if (user.eventsLast30 < 10) probability += 0.1;
+      
+      // Clamp probability
+      probability = Math.max(0.1, Math.min(0.9, probability));
+      
+      // Determine risk category
+      let riskCategory = 'Medium Risk';
+      if (probability > 0.7) riskCategory = 'High Risk';
+      if (probability < 0.4) riskCategory = 'Low Risk';
+      
+      return {
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        probability,
+        willChurn: probability > 0.5,
+        riskCategory
+      };
+    });
+    
+    // Update optimistic predictions tracking
+    const optimistic: Record<string, boolean> = {};
+    predictions.forEach(p => {
+      optimistic[p.userId] = true;
+    });
+    setOptimisticPredictions(optimistic);
+    
+    return predictions;
+  }, [data?.users]);
+
+  // Stable callback functions
+  const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
-  };
+  }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     setSearch(searchInputValue);
     setPage(1);
-  };
+  }, [searchInputValue]);
 
-  const handlePredictAll = () => {
+  const handleSearchInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInputValue(e.target.value);
+  }, []);
+
+  const handlePredictAll = useCallback(() => {
+    // Prevent multiple predictions
+    if (isPredicting || predictLoading) return;
+    
     setSuccessMessage(null);
     setIsPredicting(true);
+    setHasPredicted(false);
+    
+    // Generate optimistic predictions that will be shown in the UI
+    createOptimisticPredictions();
+    
+    // Log that we're starting the prediction
+    console.log('Starting prediction for all users...');
+    
+    // Show initial toast
+    const toastId = toast.loading('Predicting churn for all users...', {
+      duration: Infinity,
+    });
+    
+    // Schedule a follow-up toast after 5 seconds
+    setTimeout(() => {
+      toast.loading('Prediction in progress, this may take up to a minute...', {
+        id: toastId,
+        duration: Infinity,
+      });
+    }, 5000);
+    
+    // Create a timeout to ensure we update the UI even if the request hangs
+    const timeoutId = setTimeout(() => {
+      console.log('Prediction request is taking longer than expected...');
+      toast.loading('Prediction is taking longer than expected. Processing in the background...', {
+        id: toastId,
+        duration: Infinity,
+      });
+      
+      setSuccessMessage('Prediction request initiated and processing in the background. The results will be available shortly.');
+      setIsPredicting(false);
+      setHasPredicted(true);
+      
+      // Force a refetch after a longer delay
+      setTimeout(() => {
+        console.log('Forcing refetch to check prediction results...');
+        refetch().then(() => {
+          toast.success('Predictions have been updated!', {
+            id: toastId,
+            duration: 3000,
+          });
+        });
+      }, 10000); // Try refetching after 10 seconds
+    }, 30000); // Set timeout for 30 seconds
     
     predictAll(undefined, {
       onSuccess: (data) => {
-        setSuccessMessage(`Churn predicted for all ${data.count} users in the database!`);
+        // Clear the timeout since we got a response
+        clearTimeout(timeoutId);
+        
+        const count = data?.predictions?.length || 0;
+        console.log(`Prediction completed for ${count} users`);
+        
+        // Get risk distribution
+        if (data?.predictions?.length) {
+          const highRisk = data.predictions.filter((p: any) => p.riskCategory === 'High Risk').length;
+          const mediumRisk = data.predictions.filter((p: any) => p.riskCategory === 'Medium Risk').length;
+          const lowRisk = data.predictions.filter((p: any) => p.riskCategory === 'Low Risk').length;
+          
+          const successMsg = `Churn predicted for ${count} users with distribution: 
+            ${lowRisk} Low Risk (${Math.round(lowRisk/count*100)}%), 
+            ${mediumRisk} Medium Risk (${Math.round(mediumRisk/count*100)}%), 
+            ${highRisk} High Risk (${Math.round(highRisk/count*100)}%)`;
+          
+          setSuccessMessage(successMsg);
+          
+          // Update toast
+          toast.success(successMsg, {
+            id: toastId,
+            duration: 5000,
+          });
+        } else {
+          const msg = `Churn predicted for ${count} users in the database!`;
+          setSuccessMessage(msg);
+          toast.success(msg, {
+            id: toastId,
+            duration: 5000,
+          });
+        }
+      },
+      onError: (error) => {
+        // Clear the timeout since we got a response
+        clearTimeout(timeoutId);
+        
+        console.error('Prediction failed:', error);
+        const errorMsg = `Prediction encountered an error: ${error.message || 'Unknown error'}. A partial prediction may have been completed.`;
+        setSuccessMessage(errorMsg);
+        
+        // Update toast
+        toast.error(errorMsg, {
+          id: toastId,
+          duration: 5000,
+        });
+      },
+      onSettled: () => {
+        // This runs on both success and error
+        setIsPredicting(false);
+        setHasPredicted(true);
+        
+        // Refetch data to show latest predictions
+        setTimeout(() => {
+          refetch();
+        }, 500);
       }
     });
-  };
+  }, [isPredicting, predictLoading, predictAll, refetch, createOptimisticPredictions]);
+
+  // Clear optimistic predictions when predictions are complete
+  useEffect(() => {
+    if (!isPredicting && hasPredicted) {
+      // Clear optimistic predictions after a delay
+      const timer = setTimeout(() => {
+        setOptimisticPredictions({});
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isPredicting, hasPredicted]);
+
+  // Add a function to check if a prediction is optimistic
+  const isOptimistic = useCallback((userId: string) => {
+    return optimisticPredictions[userId] === true;
+  }, [optimisticPredictions]);
 
   if (isLoading) {
     return (
@@ -126,10 +292,6 @@ export default function ChurnPredictionPage() {
       </div>
     );
   }
-
-  const users = data?.users || [];
-  const pagination = data?.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 };
-  const predictions = predictData?.predictions || [];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -157,7 +319,7 @@ export default function ChurnPredictionPage() {
                 type="text"
                 placeholder="Search users..."
                 value={searchInputValue}
-                onChange={(e) => setSearchInputValue(e.target.value)}
+                onChange={handleSearchInputChange}
                 className="flex-1"
               />
               <Button type="submit" variant="outline">Search</Button>
@@ -204,7 +366,7 @@ export default function ChurnPredictionPage() {
                 </thead>
                 <tbody>
                   {users.map((user) => (
-                    <tr key={user.id} className="border-b hover:bg-gray-50">
+                    <tr key={user.id} className={`border-b hover:bg-gray-50 ${isOptimistic(user.id) ? 'bg-blue-50' : ''}`}>
                       <td className="px-4 py-3">{user.name}</td>
                       <td className="px-4 py-3">{user.email}</td>
                       <td className="px-4 py-3 capitalize">{user.plan}</td>
@@ -220,9 +382,10 @@ export default function ChurnPredictionPage() {
                                 : user.churnPrediction.riskCategory === 'Medium Risk'
                                 ? 'bg-yellow-100 text-yellow-800'
                                 : 'bg-green-100 text-green-800'
-                            }`}
+                            } ${isOptimistic(user.id) ? 'animate-pulse' : ''}`}
                           >
                             {user.churnPrediction.riskCategory}
+                            {isOptimistic(user.id) && ' (Estimating...)'}
                           </span>
                         ) : (
                           'No prediction'

@@ -49,14 +49,6 @@ interface PredictionRequest {
   revenueLast30: number;
 }
 
-interface PredictionResult {
-  userId: string;
-  name: string;
-  email: string;
-  probability: number;
-  willChurn: boolean;
-  riskCategory: string;
-}
 
 interface UsersResponse {
   users: User[];
@@ -164,6 +156,7 @@ export function useChurnPredictionUsers({
       const queryParams = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
+        includeActivity: 'true',
       });
       
       if (search) {
@@ -177,6 +170,10 @@ export function useChurnPredictionUsers({
       }
       
       const data = await response.json();
+      
+      if (data.users.length > 0 && 'daysSinceActivity' in data.users[0]) {
+        return data;
+      }
       
       const usersWithActivity = data.users.map((user: User) => {
         const userIdSum = user.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
@@ -210,6 +207,11 @@ export function useChurnPredictionUsers({
         pagination: data.pagination
       };
     },
+    // Disable automatic refetching
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    staleTime: 60000, // Consider data fresh for 1 minute
   });
 }
 
@@ -218,51 +220,81 @@ export function usePredictAllChurn() {
   
   return useMutation({
     mutationFn: async () => {
-      // Fetch all users first
-      const allUsersResponse = await fetch('/api/users?limit=999');
+      // Use sessionStorage to prevent repeated requests in the same session
+      const lastPredictionTime = sessionStorage.getItem('lastPredictionTime');
+      const now = Date.now();
+      
+      // If we made a prediction in the last 30 seconds, return cached result
+      if (lastPredictionTime && now - parseInt(lastPredictionTime) < 30000) {
+        console.log('Skipping prediction, throttled');
+        
+        const cachedResult = sessionStorage.getItem('lastPredictionResult');
+        if (cachedResult) {
+          return JSON.parse(cachedResult);
+        }
+      }
+      
+      // Use a request cache ID to prevent duplicate requests
+      const cacheId = `prediction-${now}`;
+      sessionStorage.setItem('lastPredictionRequestId', cacheId);
+      
+      const allUsersResponse = await fetch('/api/users?limit=999&includeActivity=true');
       if (!allUsersResponse.ok) {
         throw new Error('Failed to fetch all users');
       }
       
+      // Check if another request has started after this one
+      if (sessionStorage.getItem('lastPredictionRequestId') !== cacheId) {
+        console.log('Aborting prediction, newer request in progress');
+        return { predictions: [], aborted: true };
+      }
+      
       const allUsersData = await allUsersResponse.json();
       
-      // Add activity data to users
-      const allUsersWithActivity = allUsersData.users.map((user: User) => {
-        const userIdSum = user.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-        const normalizedSeed = userIdSum / 1000;
-        
-        const daysSinceCreated = Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24));
-        const daysSinceActivity = Math.min(daysSinceCreated, Math.floor(normalizedSeed * 30));
-        
-        let eventMultiplier = 1;
-        if (user.plan === 'premium') eventMultiplier = 3;
-        else if (user.plan === 'basic') eventMultiplier = 2;
-        
-        const eventsLast30 = Math.floor((normalizedSeed * 50 + 10) * eventMultiplier);
-        
-        let baseRevenue = 0;
-        if (user.plan === 'premium') baseRevenue = 300;
-        else if (user.plan === 'basic') baseRevenue = 100;
-        
-        const revenueLast30 = baseRevenue;
-        
-        return {
-          ...user,
-          daysSinceActivity,
-          eventsLast30,
-          revenueLast30
-        };
-      });
+      let usersToProcess = allUsersData.users;
       
-      const predictionRequests = allUsersWithActivity.map((user: UserWithActivity) => {
-        return {
-          userId: user.id,
-          plan: user.plan,
-          daysSinceActivity: user.daysSinceActivity,
-          eventsLast30: user.eventsLast30,
-          revenueLast30: user.revenueLast30
-        };
-      });
+      if (usersToProcess.length > 0 && !('daysSinceActivity' in usersToProcess[0])) {
+        usersToProcess = allUsersData.users.map((user: User) => {
+          const userIdSum = user.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+          const normalizedSeed = userIdSum / 1000;
+          
+          const daysSinceCreated = Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+          const daysSinceActivity = Math.min(daysSinceCreated, Math.floor(normalizedSeed * 30));
+          
+          let eventMultiplier = 1;
+          if (user.plan === 'premium') eventMultiplier = 3;
+          else if (user.plan === 'basic') eventMultiplier = 2;
+          
+          const eventsLast30 = Math.floor((normalizedSeed * 50 + 10) * eventMultiplier);
+          
+          let baseRevenue = 0;
+          if (user.plan === 'premium') baseRevenue = 300;
+          else if (user.plan === 'basic') baseRevenue = 100;
+          
+          const revenueLast30 = baseRevenue;
+          
+          return {
+            ...user,
+            daysSinceActivity,
+            eventsLast30,
+            revenueLast30
+          };
+        });
+      }
+      
+      // Check again if another request has started
+      if (sessionStorage.getItem('lastPredictionRequestId') !== cacheId) {
+        console.log('Aborting prediction, newer request in progress');
+        return { predictions: [], aborted: true };
+      }
+      
+      const predictionRequests: PredictionRequest[] = usersToProcess.map((user: UserWithActivity) => ({
+        userId: user.id,
+        plan: user.plan,
+        daysSinceActivity: user.daysSinceActivity,
+        eventsLast30: user.eventsLast30,
+        revenueLast30: user.revenueLast30
+      }));
       
       const response = await fetch('/api/churn-prediction', {
         method: 'POST',
@@ -278,22 +310,51 @@ export function usePredictAllChurn() {
       
       const result = await response.json();
       
+      // Add user info to prediction results
       const predictionsWithUserInfo = result.predictions.map((pred: any, index: number) => ({
-        userId: allUsersWithActivity[index].id,
-        name: allUsersWithActivity[index].name,
-        email: allUsersWithActivity[index].email,
+        userId: usersToProcess[index].id,
+        name: usersToProcess[index].name,
+        email: usersToProcess[index].email,
         ...pred
       }));
       
-      return {
+      // Store the timestamp and enhanced result
+      const enhancedResult = {
         predictions: predictionsWithUserInfo,
-        count: allUsersWithActivity.length
+        count: usersToProcess.length
       };
+      
+      sessionStorage.setItem('lastPredictionTime', now.toString());
+      sessionStorage.setItem('lastPredictionResult', JSON.stringify(enhancedResult));
+      
+      return enhancedResult;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['churnPredictionUsers'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['churnPredictionUsers'] });
+      await queryClient.cancelQueries({ queryKey: ['dashboardData'] });
+      
+      // Get the current query data
+      const previousUsers = queryClient.getQueryData(['churnPredictionUsers']);
+      
+      return { previousUsers };
+    },
+    onSuccess: (data, variables, context) => {
+      // Skip query invalidation if the request was aborted
+      if (data.aborted) return;
+      
+      // Delay invalidation to prevent rapid re-rendering
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['churnPredictionUsers'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+      }, 500);
+    },
+    onError: (error, variables, context) => {
+      // Rollback optimistic updates if needed
+      if (context?.previousUsers) {
+        queryClient.setQueryData(['churnPredictionUsers'], context.previousUsers);
+      }
     }
   });
 } 

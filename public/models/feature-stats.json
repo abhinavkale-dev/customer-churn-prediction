@@ -1,0 +1,18 @@
+{
+  "daysSinceActivity": {
+    "max": 3,
+    "min": 0,
+    "mean": 0.8733766233766234
+  },
+  "eventsLast30": {
+    "max": 25,
+    "min": 0,
+    "mean": 1
+  },
+  "revenueLast30": {
+    "max": 617.03,
+    "min": 0,
+    "mean": 6.12686
+  },
+  "timestamp": 1746120463853
+}
