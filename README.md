@@ -29,6 +29,24 @@ The Customer Churn Prediction Platform is a powerful SaaS application built with
 - **Revenue Optimization**: Correctly calculates revenue based on subscription plans
 - **User Management**: Track and manage user activity and subscription status
 
+## 🏗️ Project Architecture
+
+<div align="center">
+<img src="public/project-architecture.png" alt="Project Architecture" width="100%" />
+<br />
+<sub><b>Comprehensive architecture diagram showing the system's components and data flow</b></sub>
+</div>
+
+<br />
+
+The application follows a modern, scalable architecture:
+
+- **Frontend Layer**: Next.js pages and components with React hooks for state management
+- **API Layer**: RESTful endpoints handling data operations and ML model interactions
+- **Service Layer**: Business logic, ML processing, and external integrations
+- **Data Layer**: PostgreSQL database with Prisma ORM for type-safe queries
+- **Infrastructure**: Deployed on Vercel with serverless functions
+
 ## 💻 Tech Stack
 
 - **Frontend**: Next.js 14, React, Tailwind CSS, Shadcn UI, React Query
