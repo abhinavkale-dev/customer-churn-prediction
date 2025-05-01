@@ -11,6 +11,16 @@ module.exports = {
     'bg-background',
     'text-foreground',
   ],
+  // Use more compatible settings for Vercel deployment
+  future: {
+    // Disable hoverOnlyWhenSupported to avoid Issues with Next.js 15
+    hoverOnlyWhenSupported: false,
+  },
+  // Disable lightning CSS
+  experimental: {
+    lightningcss: false,
+    optimizeUniversalDefaults: false
+  },
   theme: {
     container: {
       center: true,
