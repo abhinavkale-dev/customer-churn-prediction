@@ -11,16 +11,26 @@ export const metadata: Metadata = {
   title: siteConfig.name,
   description: siteConfig.description,
   openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: siteConfig.baseUrl,
     title: siteConfig.name,
     description: siteConfig.description,
+    siteName: siteConfig.name,
     images: [
       {
-        url: '/customer-churn-landing.png',
+        url: `${siteConfig.baseUrl}/customer-churn-landing.png`,
         width: 1200,
         height: 630,
         alt: 'Customer Churn Landing Page',
       },
     ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [`${siteConfig.baseUrl}/customer-churn-landing.png`],
   },
   icons: {
     icon: [
