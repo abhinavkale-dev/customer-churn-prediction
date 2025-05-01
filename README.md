@@ -221,6 +221,7 @@ TEST_EMAIL="your-test-email@example.com"
 # OpenAI API (for Chatbot)
 OPENAI_API_KEY="your_openai_api_key"
 
+```
 
 
 ## 📧 Email Reports
