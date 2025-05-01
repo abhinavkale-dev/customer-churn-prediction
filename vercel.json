@@ -2,13 +2,6 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "outputDirectory": ".next",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
   "build": {
     "env": {
       "VERCEL_FORCE_NO_BUILD_CACHE": "1"
