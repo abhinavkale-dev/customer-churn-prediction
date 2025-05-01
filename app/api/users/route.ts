@@ -87,7 +87,7 @@ export async function GET(request: Request) {
     
     const total = await prisma.user.count({ where });
     
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       users,
       pagination: {
         total,
@@ -95,14 +95,20 @@ export async function GET(request: Request) {
         limit,
         totalPages: Math.ceil(total / limit),
       },
+    }), {
+      headers: {
+        'content-type': 'application/json',
+      },
     });
     
   } catch (error) {
     console.error('Error fetching users:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to fetch users' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   } finally {
     await prisma.$disconnect();
   }

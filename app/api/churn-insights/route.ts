@@ -13,10 +13,12 @@ export async function POST(request: Request) {
         
         if (!plan || daysSinceActivity === undefined || eventsLast30 === undefined || 
             revenueLast30 === undefined || probability === undefined) {
-          return NextResponse.json(
-            { error: 'Missing required userData fields' },
-            { status: 400 }
-          );
+          return new Response(JSON.stringify({ error: 'Missing required userData fields' }), {
+            status: 400,
+            headers: {
+              'content-type': 'application/json',
+            },
+          });
         }
         
         const [explanationResult, strategiesResult] = await Promise.all([
@@ -24,26 +26,34 @@ export async function POST(request: Request) {
           generateRetentionStrategies(userData)
         ]);
         
-        return NextResponse.json({
+        return new Response(JSON.stringify({
           insights: {
             explanation: explanationResult.explanation,
             strategies: strategiesResult.strategies
           }
+        }), {
+          headers: {
+            'content-type': 'application/json',
+          },
         });
       } catch (error) {
         console.error('Error processing userData:', error);
-        return NextResponse.json(
-          { error: 'Invalid userData format' },
-          { status: 400 }
-        );
+        return new Response(JSON.stringify({ error: 'Invalid userData format' }), {
+          status: 400,
+          headers: {
+            'content-type': 'application/json',
+          },
+        });
       }
     }
     
     if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID or userData is required' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify({ error: 'User ID or userData is required' }), {
+        status: 400,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
     
     const user = await prisma.user.findUnique({
@@ -58,17 +68,21 @@ export async function POST(request: Request) {
     });
     
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return new Response(JSON.stringify({ error: 'User not found' }), {
+        status: 404,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
     
     if (!user.churnPrediction) {
-      return NextResponse.json(
-        { error: 'No churn prediction found for this user' },
-        { status: 404 }
-      );
+      return new Response(JSON.stringify({ error: 'No churn prediction found for this user' }), {
+        status: 404,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
     
     const lastActivity = user.activities[0]?.timestamp;
@@ -93,7 +107,7 @@ export async function POST(request: Request) {
       generateRetentionStrategies(userDataForAI)
     ]);
     
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       user: {
         id: user.id,
         name: user.name,
@@ -110,14 +124,20 @@ export async function POST(request: Request) {
         explanation: explanationResult.explanation,
         strategies: strategiesResult.strategies
       }
+    }), {
+      headers: {
+        'content-type': 'application/json',
+      },
     });
     
   } catch (error) {
     console.error('Error generating churn insights:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate churn insights' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to generate churn insights' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   } finally {
     await prisma.$disconnect();
   }

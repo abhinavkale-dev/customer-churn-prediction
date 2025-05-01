@@ -11,7 +11,7 @@ export async function GET() {
     });
     
     const planDistribution = usersByPlan.map(item => ({
-      plan: item.plan.charAt(0).toUpperCase() + item.plan.slice(1), // Capitalize
+      plan: item.plan.charAt(0).toUpperCase() + item.plan.slice(1),
       count: item._count.id
     }));
     
@@ -65,20 +65,28 @@ export async function GET() {
       count
     }));
     
-    return NextResponse.json({
+    const responseData = {
       planDistribution,
       churnByPlan: simulatedChurnData,
       activityVsChurn,
       churnTrend,
       riskDistribution
+    };
+    
+    return new Response(JSON.stringify(responseData), {
+      headers: {
+        'content-type': 'application/json',
+      },
     });
     
   } catch (error) {
     console.error('Error fetching analytics data:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch analytics data' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to fetch analytics data' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   } finally {
     await prisma.$disconnect();
   }

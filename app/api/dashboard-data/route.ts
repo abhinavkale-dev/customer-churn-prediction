@@ -46,20 +46,26 @@ export async function GET() {
       predictedAt: prediction.predictedAt.toISOString()
     }));
     
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       totalCustomers,
       highRiskCount,
       mediumRiskCount,
       lowRiskCount,
       recentPredictions: formattedPredictions
+    }), {
+      headers: {
+        'content-type': 'application/json',
+      },
     });
     
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch dashboard data' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to fetch dashboard data' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   } finally {
     await prisma.$disconnect();
   }

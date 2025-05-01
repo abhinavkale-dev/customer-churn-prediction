@@ -14,10 +14,12 @@ export async function POST(req: Request) {
     });
 
     if (!subscription) {
-      return NextResponse.json(
-        { success: false, message: 'No active subscription found' },
-        { status: 404 }
-      );
+      return new Response(JSON.stringify({ success: false, message: 'No active subscription found' }), {
+        status: 404,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
 
     const updatedSubscription = await prisma.subscription.update({
@@ -43,19 +45,25 @@ export async function POST(req: Request) {
       text,
     });
 
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       success: true,
       subscription: updatedSubscription,
       email: {
         success: emailResult.success,
         messageId: emailResult.id,
       }
+    }), {
+      headers: {
+        'content-type': 'application/json',
+      },
     });
   } catch (error) {
     console.error("Cancellation error:", error);
-    return NextResponse.json(
-      { error: "Failed to process cancellation" },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: "Failed to process cancellation" }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   }
 } 

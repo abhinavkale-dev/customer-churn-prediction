@@ -27,18 +27,24 @@ export async function POST(req: Request) {
       text,
     });
 
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       subscription,
       email: {
         success: emailResult.success,
         messageId: emailResult.id,
       },
+    }), {
+      headers: {
+        'content-type': 'application/json',
+      },
     });
   } catch (error) {
     console.error('Subscription error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process subscription' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to process subscription' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   }
 } 

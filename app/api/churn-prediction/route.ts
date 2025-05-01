@@ -167,16 +167,23 @@ export async function POST(request: Request) {
         predictions.push(result);
       }
       
-      return NextResponse.json({ predictions }, { status: 200 });
+      return new Response(JSON.stringify({ predictions }), { 
+        status: 200,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
     
     const { plan, daysSinceActivity, eventsLast30, revenueLast30, userId } = body;
     
     if (!plan || daysSinceActivity === undefined || eventsLast30 === undefined || revenueLast30 === undefined) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        status: 400,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
     
     const result = predictChurn({
@@ -205,13 +212,20 @@ export async function POST(request: Request) {
       });
     }
     
-    return NextResponse.json(result, { status: 200 });
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   } catch (error) {
     console.error('Error predicting churn:', error);
-    return NextResponse.json(
-      { error: 'Failed to predict churn' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to predict churn' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   } finally {
     await prisma.$disconnect();
   }
@@ -223,10 +237,12 @@ export async function GET(request: Request) {
     const userId = searchParams.get('userId');
     
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Missing userId parameter' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify({ error: 'Missing userId parameter' }), {
+        status: 400,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
     
     const prediction = await prisma.churnPrediction.findUnique({
@@ -234,19 +250,28 @@ export async function GET(request: Request) {
     });
     
     if (!prediction) {
-      return NextResponse.json(
-        { error: 'No churn prediction found for this user' },
-        { status: 404 }
-      );
+      return new Response(JSON.stringify({ error: 'No churn prediction found for this user' }), {
+        status: 404,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
     
-    return NextResponse.json(prediction, { status: 200 });
+    return new Response(JSON.stringify(prediction), {
+      status: 200,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   } catch (error) {
-    console.error('Error retrieving churn prediction:', error);
-    return NextResponse.json(
-      { error: 'Failed to retrieve churn prediction' },
-      { status: 500 }
-    );
+    console.error('Error fetching churn prediction:', error);
+    return new Response(JSON.stringify({ error: 'Failed to fetch churn prediction' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   } finally {
     await prisma.$disconnect();
   }

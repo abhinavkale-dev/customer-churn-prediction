@@ -56,18 +56,24 @@ export async function POST(req: Request) {
       text,
     });
 
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       success: true,
       email: {
         success: emailResult.success,
         messageId: emailResult.id,
       },
+    }), {
+      headers: {
+        'content-type': 'application/json',
+      },
     });
   } catch (error) {
     console.error('Login error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process login' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to process login' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   }
 } 

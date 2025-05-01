@@ -132,19 +132,25 @@ export async function POST(req: Request) {
       text,
     });
 
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       success: true,
       planUpdated: true,
       email: {
         success: emailResult.success,
         messageId: emailResult.id,
       },
+    }), {
+      headers: {
+        'content-type': 'application/json',
+      },
     });
   } catch (error) {
     console.error('Plan update error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update plan' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to update plan' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   }
 } 

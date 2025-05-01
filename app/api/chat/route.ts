@@ -2,13 +2,11 @@ import { NextResponse } from 'next/server';
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateText, Message as AIMessage } from 'ai';
 
-// Define our message type
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
 }
 
-// Create OpenAI provider instance with strict mode for the API
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   compatibility: 'strict',
@@ -19,10 +17,12 @@ export async function POST(request: Request) {
     const { messages, context } = await request.json();
     
     if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json(
-        { error: 'Invalid messages format' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify({ error: 'Invalid messages format' }), {
+        status: 400,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
     
     const systemMessage = `You are a helpful assistant for a customer churn prediction application. 
@@ -68,13 +68,19 @@ export async function POST(request: Request) {
       maxTokens: 300,
     });
     
-    return NextResponse.json({ message: text });
+    return new Response(JSON.stringify({ message: text }), {
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
     
   } catch (error) {
     console.error('Error in chat API:', error);
-    return NextResponse.json(
-      { error: 'Failed to process chat request' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to process chat request' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   }
 } 

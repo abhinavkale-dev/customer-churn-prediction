@@ -12,10 +12,12 @@ export async function POST(request: Request) {
     const fileType = formData.get('fileType') as string;
     
     if (!file) {
-      return NextResponse.json(
-        { error: 'No file uploaded' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify({ error: 'No file uploaded' }), {
+        status: 400,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
     
     const buffer = await file.arrayBuffer();
@@ -28,27 +30,35 @@ export async function POST(request: Request) {
     } else if (fileType === 'excel') {
       records = parseExcel(buffer);
     } else {
-      return NextResponse.json(
-        { error: 'Unsupported file type' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify({ error: 'Unsupported file type' }), {
+        status: 400,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
     
     const validRecords = await validateAndTransformRecords(records);
     
     const importedCount = await importRecordsToDatabase(validRecords);
     
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       success: true,
       importedCount
+    }), {
+      headers: {
+        'content-type': 'application/json',
+      },
     });
     
   } catch (error) {
     console.error('Error importing data:', error);
-    return NextResponse.json(
-      { error: 'Failed to import data', details: (error as Error).message },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to import data', details: (error as Error).message }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   } finally {
     await prisma.$disconnect();
   }
@@ -136,7 +146,7 @@ export async function GET(request: Request) {
   const format = searchParams.get('format') || 'csv';
   
   if (format === 'csv') {
-    return NextResponse.redirect(new URL('/templates/import-template.csv', request.url).toString());
+    return Response.redirect(new URL('/templates/import-template.csv', request.url).toString());
   }
   
   try {
@@ -163,9 +173,11 @@ export async function GET(request: Request) {
     
   } catch (error) {
     console.error('Error generating Excel template:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate template' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to generate template' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   }
 } 

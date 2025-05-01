@@ -58,10 +58,12 @@ export async function GET(request: Request) {
     
   } catch (error) {
     console.error('Error downloading data:', error);
-    return NextResponse.json(
-      { error: 'Failed to download data' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to download data' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   } finally {
     await prisma.$disconnect();
   }

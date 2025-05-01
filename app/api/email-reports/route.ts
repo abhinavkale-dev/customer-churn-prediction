@@ -16,17 +16,21 @@ export async function POST(request: Request) {
     const { email, format, data: userData } = data;
     
     if (!email) {
-      return NextResponse.json(
-        { error: 'Email address is required' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify({ error: 'Email address is required' }), {
+        status: 400,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
     
     if (!format || !['csv', 'excel'].includes(format)) {
-      return NextResponse.json(
-        { error: 'Valid format (csv or excel) is required' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify({ error: 'Valid format (csv or excel) is required' }), {
+        status: 400,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
 
     const reportData = userData && userData.length > 0 
@@ -131,7 +135,7 @@ export async function POST(request: Request) {
       
       console.log(`Report sent to ${email} successfully`);
       
-      return NextResponse.json({
+      return new Response(JSON.stringify({
         success: true,
         message: `Report has been sent to ${email}`,
         details: {
@@ -139,19 +143,27 @@ export async function POST(request: Request) {
           format,
           requestedAt: new Date().toISOString(),
         }
+      }), {
+        headers: {
+          'content-type': 'application/json',
+        },
       });
     } catch (sesError) {
       console.error('Error sending email with SES:', sesError);
-      return NextResponse.json(
-        { error: 'Failed to send email. Please try again later.' },
-        { status: 500 }
-      );
+      return new Response(JSON.stringify({ error: 'Failed to send email. Please try again later.' }), {
+        status: 500,
+        headers: {
+          'content-type': 'application/json',
+        },
+      });
     }
   } catch (error) {
     console.error('Error processing email report request:', error);
-    return NextResponse.json(
-      { error: 'Failed to process report request' },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to process report request' }), {
+      status: 500,
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
   }
 } 
