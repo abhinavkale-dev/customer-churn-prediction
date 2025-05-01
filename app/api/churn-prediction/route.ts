@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import * as fs from 'fs';
 import * as path from 'path';
+import mlChurnPredictor from '@/lib/ml-churn-predictor';
+import type { ChurnPredictionInput } from '@/lib/ml-churn-predictor';
 
 /**
  * Risk thresholds to achieve target distribution
@@ -47,103 +49,44 @@ function getRiskCategory(probability: number): string {
  * - High Risk: 20%
  */
 function calibratePredictions(predictions: any[]) {
-  if (!predictions || predictions.length === 0) {
-    return predictions;
-  }
-
-  // Clone the predictions to avoid mutating the original
-  const result = [...predictions];
-  const totalCount = result.length;
-  
-  // Calculate exact number of predictions for each category
-  const lowRiskCount = Math.floor(totalCount * 0.45);
-  const mediumRiskCount = Math.floor(totalCount * 0.35);
-  const highRiskCount = totalCount - lowRiskCount - mediumRiskCount;
-  
-  console.log(`[${Date.now()}] Forcing distribution: Total=${totalCount}, Low=${lowRiskCount} (45%), Medium=${mediumRiskCount} (35%), High=${highRiskCount} (20%)`);
-  
-  // Sort by probability (lowest to highest)
-  result.sort((a, b) => a.probability - b.probability);
-  
-  // Assign categories based on position in sorted array, not probability
-  for (let i = 0; i < totalCount; i++) {
-    if (i < lowRiskCount) {
-      result[i].riskCategory = 'Low Risk';
-      result[i].willChurn = false;
-    } else if (i < lowRiskCount + mediumRiskCount) {
-      result[i].riskCategory = 'Medium Risk';
-      result[i].willChurn = result[i].probability > 0.6; // Only higher medium probabilities may churn
-    } else {
-      result[i].riskCategory = 'High Risk';
-      result[i].willChurn = true;
-    }
-  }
-  
-  return result;
+  // Use the ML predictor's calibration function
+  return mlChurnPredictor.calibratePredictions(predictions, { 
+    low: 0.45, 
+    medium: 0.35, 
+    high: 0.2 
+  });
 }
 
 /**
- * Data-driven rule-based churn prediction
+ * Machine Learning-based churn prediction
  */
-async function predictChurnRuleBased(data: {
+async function predictChurnML(data: {
   plan: string;
   daysSinceActivity: number;
   eventsLast30: number;
   revenueLast30: number;
   userId?: string; 
 }) {
-  // Start with a base probability
-  let probability = 0.5;
-  
   try {
-    // Get statistics from existing data to calibrate predictions
-    const stats = await getDataStatistics();
+    // Use the ML predictor to make a prediction
+    const prediction = mlChurnPredictor.predict({
+      plan: data.plan,
+      daysSinceActivity: data.daysSinceActivity,
+      eventsLast30: data.eventsLast30,
+      revenueLast30: data.revenueLast30
+    });
     
-    // Plan factor - compare to average churn by plan
-    if (data.plan === 'free') {
-      probability += stats.planFactors.free || 0.1;
-    } else if (data.plan === 'basic') {
-      probability += stats.planFactors.basic || 0.05;
-    } else if (data.plan === 'premium') {
-      probability += stats.planFactors.premium || -0.05;
-    }
-    
-    // Activity factor
-    const activityRatio = data.daysSinceActivity / (stats.avgDaysSinceActivity || 15);
-    probability += 0.2 * Math.min(activityRatio, 2); // Cap the effect
-    
-    // Engagement factor (events)
-    const engagementRatio = (stats.avgEventsLast30 || 50) / Math.max(data.eventsLast30, 1);
-    probability += 0.15 * Math.min(engagementRatio, 2); // Cap the effect
-    
-    // Revenue factor
-    const revenueRatio = (stats.avgRevenueLast30 || 100) / Math.max(data.revenueLast30, 1);
-    probability += 0.15 * Math.min(revenueRatio, 2); // Cap the effect
-    
-    // Add some variability if userId is present to ensure distribution
-    if (data.userId) {
-      const idSum = data.userId.split('').reduce((sum, char, index) => {
-        return sum + (char.charCodeAt(0) * (index + 1));
-      }, 0);
-      
-      const randomFactor = (idSum % 100) / 400; // Between 0 and 0.25
-      probability += randomFactor - 0.125; // Between -0.125 and 0.125
-    }
-    
-    // Ensure probability is within range
-    probability = Math.max(0.05, Math.min(0.95, probability));
-    probability = parseFloat(probability.toFixed(2));
-    
-    // Determine risk category
-    const riskCategory = getRiskCategory(probability);
+    // Get risk category based on probability
+    const riskCategory = mlChurnPredictor.getRiskCategory(prediction.probability);
     
     return {
-      probability,
-      willChurn: probability > 0.5,
-      riskCategory
+      probability: prediction.probability,
+      willChurn: prediction.willChurn,
+      riskCategory,
+      confidence: prediction.confidence
     };
   } catch (error) {
-    console.error('Error during rule-based prediction:', error);
+    console.error('Error during ML prediction:', error);
     return fallbackPrediction(data);
   }
 }
@@ -239,6 +182,52 @@ async function getDataStatistics() {
     // Calculate average revenue
     const avgRevenueLast30 = usersByPlan.free.length * 0 + usersByPlan.basic.length * 100 + usersByPlan.premium.length * 300;
     const avgRevenuePerUser = users.length > 0 ? avgRevenueLast30 / users.length : 100; // Default
+    
+    // Use this data to train the ML model if we have enough historical data
+    if (users.length > 100 && predictions.length > 100) {
+      // Map predictions to users for faster lookup
+      const predictionByUserId = new Map();
+      predictions.forEach(p => predictionByUserId.set(p.userId, p));
+      
+      // Prepare training data from historical predictions
+      const trainingData = users
+        .map(user => {
+          const prediction = predictionByUserId.get(user.id);
+          const userActivities = activities.filter(a => a.userId === user.id);
+          
+          // Calculate activity metrics
+          const now = new Date();
+          const lastActivity = userActivities.length > 0 ? new Date(userActivities[0].timestamp) : new Date(user.createdAt);
+          const daysSinceActivity = Math.floor((now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
+          const eventsLast30 = userActivities.length;
+          const revenueLast30 = userActivities.reduce((sum, a) => sum + a.revenue, 0);
+          
+          // Only include users with predictions
+          if (prediction) {
+            return {
+              input: {
+                plan: user.plan,
+                daysSinceActivity,
+                eventsLast30,
+                revenueLast30
+              },
+              output: {
+                churned: prediction.willChurn === true // Ensure boolean
+              }
+            };
+          }
+          return null;
+        })
+        .filter((item): item is { input: ChurnPredictionInput, output: { churned: boolean } } => item !== null);
+      
+      // Train the model asynchronously if we have data
+      if (trainingData.length > 50) {
+        console.log(`[${Date.now()}] Training ML model with ${trainingData.length} historical data points`);
+        mlChurnPredictor.train(trainingData).then(success => {
+          console.log(`[${Date.now()}] ML model training ${success ? 'completed successfully' : 'failed'}`);
+        });
+      }
+    }
     
     // Save feature statistics for normalization
     calculateAndSaveFeatureStats(users, activities);
@@ -500,7 +489,7 @@ export async function POST(request: Request) {
             }
             
             try {
-              const result = await predictChurnRuleBased({
+              const result = await predictChurnML({
                 plan,
                 daysSinceActivity,
                 eventsLast30,
@@ -531,7 +520,7 @@ export async function POST(request: Request) {
           console.log(`[${Date.now()}] After calibration - High: ${finalPredictions.filter(p => p.riskCategory === 'High Risk').length}, Medium: ${finalPredictions.filter(p => p.riskCategory === 'Medium Risk').length}, Low: ${finalPredictions.filter(p => p.riskCategory === 'Low Risk').length}`);
         }
         
-        console.log(`[${Date.now()}] Rule-based prediction completed for ${finalPredictions.length} users`);
+        console.log(`[${Date.now()}] ML prediction completed for ${finalPredictions.length} users`);
         const highRisk = finalPredictions.filter(p => p.riskCategory === 'High Risk').length;
         const mediumRisk = finalPredictions.filter(p => p.riskCategory === 'Medium Risk').length;
         const lowRisk = finalPredictions.filter(p => p.riskCategory === 'Low Risk').length;
@@ -661,7 +650,8 @@ export async function POST(request: Request) {
       });
     }
     
-    const result = await predictChurnRuleBased({
+    // Call ML prediction for single user
+    const result = await predictChurnML({
       plan,
       daysSinceActivity,
       eventsLast30,
@@ -681,19 +671,25 @@ export async function POST(request: Request) {
         });
         
         if (userExists) {
+          // We'll include confidence in the database
           await prisma.churnPrediction.upsert({
             where: { userId },
             update: {
               probability: finalResult.probability,
               willChurn: finalResult.willChurn,
               riskCategory: finalResult.riskCategory,
-              predictedAt: new Date()
+              predictedAt: new Date(),
+              // If your schema has a confidence field, uncomment the line below
+              // confidence: finalResult.confidence
             },
             create: {
               userId,
               probability: finalResult.probability,
               willChurn: finalResult.willChurn,
-              riskCategory: finalResult.riskCategory
+              riskCategory: finalResult.riskCategory,
+              // If your schema has a confidence field, uncomment the line below
+              // confidence: finalResult.confidence
+              predictedAt: new Date()
             }
           });
         } else {
