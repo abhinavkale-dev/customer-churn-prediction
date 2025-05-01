@@ -1,6 +1,18 @@
 # Customer Churn Prediction Platform
 
-![Churn Analytics Dashboard](https://placehold.co/800x400/6d28d9/white?text=Churn+Analytics+Dashboard)
+<div align="center">
+
+<img src="public/customer-churn-dashboard.png" alt="Churn Dashboard" width="80%" />
+<br />
+<sub><b>Churn Analytics Dashboard – Visualize churn metrics and KPIs</b></sub>
+
+<br /><br />
+
+<img src="public/customer-churn-landing.png" alt="Landing Page" width="80%" />
+<br />
+<sub><b>Landing Page – Modern, responsive entry point for the platform</b></sub>
+
+</div>
 
 ## 🚀 Overview
 
@@ -14,6 +26,7 @@ The Customer Churn Prediction Platform is a powerful SaaS application built with
 - **Personalized Retention Strategies**: AI-driven recommendations tailored to your business
 - **Data Import/Export**: CSV and Excel report generation for deeper analysis
 - **Email Reports**: Schedule and send automated reports to stakeholders
+- **AI-Powered Chatbot**: Interactive assistant for contextual help and insights
 
 ## 🛠️ Tech Stack
 
@@ -25,7 +38,19 @@ The Customer Churn Prediction Platform is a powerful SaaS application built with
 - **Backend**: Next.js API routes with TypeScript
 - **Database**: Prisma ORM with your preferred database
 - **Email**: AWS SES integration for reliable email delivery
-- **Authentication**: Custom authentication flow
+- **AI**: OpenAI integration for chatbot and prediction explanations
+
+## API Routes
+
+The application includes several API routes:
+
+- `/api/users` - User management
+- `/api/dashboard-data` - Dashboard metrics
+- `/api/churn-prediction` - Run churn predictions
+- `/api/import-data` - Import user data
+- `/api/download-data` - Export data
+- `/api/email-reports` - Generate and send email reports
+- `/api/chat` - AI-powered chatbot interactions
 
 ## 📊 Dashboard Sections
 
@@ -70,6 +95,8 @@ An in-app AI chatbot provides:
 - Answers to questions about churn prediction
 - Guidance on using platform features
 - Quick navigation to relevant sections
+- Detailed explanations of churn factors and retention strategies
+- Route-specific quick questions for efficient information retrieval
 
 ## 🔄 Data Flow
 
@@ -86,18 +113,23 @@ An in-app AI chatbot provides:
 - Node.js 20+ and npm/yarn
 - Database setup (PostgreSQL recommended)
 - AWS account for email capabilities (optional)
+- OpenAI API key for chatbot functionality
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/abhinavkale-dev/churn-analysis-nextjs.git
+git clone https://github.com/abhinavkale-dev/customer-churn-prediction.git
 
 # Navigate to the project directory
-cd churn-analysis-nextjs
+cd customer-churn-prediction
 
 # Install dependencies
 npm install
+
+# Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your credentials
 
 # Run database migrations
 npx prisma migrate dev
@@ -108,6 +140,24 @@ npm run seed
 # Start development server
 npm run dev
 ```
+
+### Environment Variables
+
+Create a `.env.local` file in the root directory with the following variables:
+
+```
+# Database Connection
+DATABASE_URL="postgresql://username:password@localhost:5432/churn_prediction"
+
+# AWS Configuration for Email Sending
+AWS_REGION="us-east-1"
+AWS_ACCESS_KEY_ID="your_aws_access_key"
+AWS_SECRET_ACCESS_KEY="your_aws_secret_key"
+SES_FROM_ADDRESS="noreply@yourdomain.com"
+TEST_EMAIL="your-test-email@example.com"
+
+# OpenAI API (for Chatbot)
+OPENAI_API_KEY="your_openai_api_key"
 
 ## 📊 Sample Data
 
@@ -135,12 +185,5 @@ This platform is continuously updated with:
 - Enhanced visualization options
 - Performance optimizations
 
-## The application includes several API routes:
-
-- `/api/users` - User management
-- `/api/dashboard-data` - Dashboard metrics
-- `/api/churn-prediction` - Run churn predictions
-- `/api/import-data` - Import user data
-- `/api/download-data` - Export data
 
 
