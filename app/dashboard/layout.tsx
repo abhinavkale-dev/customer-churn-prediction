@@ -58,6 +58,7 @@ export default function DashboardLayout({
     { name: 'Dashboard', href: '/dashboard' },
     { name: 'Churn Prediction', href: '/dashboard/churn-prediction' },
     { name: 'Customer Analytics', href: '/dashboard/analytics' },
+    { name: 'Get Retention Strategies', href: '/dashboard/retention-strategies' },
     { name: 'Upgrade Plan', href: '/dashboard/settings' },
   ];
   
@@ -253,6 +254,11 @@ export default function DashboardLayout({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                           </svg>
                         )}
+                        {item.name === 'Get Retention Strategies' && (
+                          <svg className="mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        )}
                         <span className="truncate">{item.name}</span>
                       </Link>
                     );
@@ -322,6 +328,11 @@ export default function DashboardLayout({
                         {item.name === 'Upgrade Plan' && (
                           <svg className="mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                        )}
+                        {item.name === 'Get Retention Strategies' && (
+                          <svg className="mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                           </svg>
                         )}
                         {item.name}

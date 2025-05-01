@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,7 +65,6 @@ export default function DashboardPage() {
   const [riskFilter, setRiskFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [isFilterApplied, setIsFilterApplied] = useState(false);
-  const [importLoading, setImportLoading] = useState(false);
 
   const { 
     data: dashboardData, 
@@ -120,39 +119,56 @@ export default function DashboardPage() {
     setIsFilterApplied(false);
   };
 
-  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    
-    const file = e.target.files[0];
-    const fileType = e.target.id === 'csv-file-input' ? 'csv' : 'excel';
-    
+  const sendReportToEmail = async (format: 'csv' | 'excel') => {
     try {
-      setImportLoading(true);
+      const email = 'abhinavkale19026166@gmail.com';
       
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('fileType', fileType);
+      alert(`Sending ${format} report to ${email}...\nThis may take a moment if you have a large number of users.`);
       
-      const response = await fetch('/api/import-data', {
-      method: 'POST',
-        body: formData,
+      let allUsers = [];
+      
+      try {
+        const queryParams = new URLSearchParams();
+        if (search) queryParams.append('search', search);
+        if (planFilter !== 'all') queryParams.append('plan', planFilter);
+        if (riskFilter !== 'all') queryParams.append('riskCategory', riskFilter);
+        if (dateFilter !== 'all') queryParams.append('datePeriod', dateFilter);
+        queryParams.append('limit', '1000'); 
+        
+        const response = await fetch(`/api/users?${queryParams.toString()}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch all users for report');
+        }
+        
+        const data = await response.json();
+        allUsers = data.users;
+      } catch (error) {
+        console.error('Error fetching all users for report:', error);
+        allUsers = usersData?.users || [];
+      }
+      const response = await fetch('/api/email-reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          format,
+          data: allUsers,
+        }),
       });
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to import file');
+        throw new Error(error.error || 'Failed to send report');
       }
       
       const result = await response.json();
-      alert(`Successfully imported ${result.importedCount} records from ${file.name}`);
-      
-      window.location.reload();
+      alert(result.message || 'Your report has been sent successfully');
     } catch (error) {
-      console.error('Error importing file:', error);
-      alert(`Error importing file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setImportLoading(false);
-      e.target.value = '';
+      console.error('Error sending report:', error);
+      alert(`Error sending report: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -205,21 +221,21 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <h1 className="text-3xl font-bold mb-4 md:mb-0">Dashboard</h1>
         
         <div className="flex gap-2">
-          {/* Import Button & Dropdown */}
+          {/* Reports Dropdown Button */}
           <div className="relative inline-block text-left">
             <div>
               <Button 
                 variant="outline" 
-                id="import-menu-button"
+                id="reports-menu-button"
                 aria-expanded="true"
                 aria-haspopup="true"
-                onClick={() => document.getElementById('import-menu')?.classList.toggle('hidden')}
+                onClick={() => document.getElementById('reports-menu')?.classList.toggle('hidden')}
               >
-                Import
+                Get Report
                 <svg className="ml-2 -mr-1 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
@@ -227,11 +243,11 @@ export default function DashboardPage() {
             </div>
             
             <div 
-              id="import-menu" 
+              id="reports-menu" 
               className="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none z-10" 
               role="menu" 
               aria-orientation="vertical" 
-              aria-labelledby="import-menu-button" 
+              aria-labelledby="reports-menu-button" 
               tabIndex={-1}
             >
               <div className="py-1" role="none">
@@ -239,56 +255,20 @@ export default function DashboardPage() {
                   className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 w-full text-left"
                   role="menuitem"
                   tabIndex={-1}
-                  onClick={() => document.getElementById('csv-file-input')?.click()}
+                  onClick={() => sendReportToEmail('csv')}
                 >
-                  Import CSV
-              </button>
-              <button 
+                  Get CSV Report
+                </button>
+                <button
                   className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 w-full text-left"
                   role="menuitem"
                   tabIndex={-1}
-                  onClick={() => document.getElementById('excel-file-input')?.click()}
+                  onClick={() => sendReportToEmail('excel')}
                 >
-                  Import Excel
+                  Get Excel Report
                 </button>
-                <div className="border-t border-gray-100 pt-1 mt-1">
-                  <a
-                    href="/templates/import-template.csv"
-                    download
-                    className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 w-full text-left"
-                    role="menuitem"
-                    tabIndex={-1}
-                  >
-                    Download CSV Template
-                  </a>
-                  <a
-                    href="/api/import-data?format=excel"
-                    download
-                    className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 w-full text-left"
-                    role="menuitem"
-                    tabIndex={-1}
-                  >
-                    Download Excel Template
-                  </a>
-                </div>
               </div>
             </div>
-            
-            {/* Hidden file inputs */}
-            <input 
-              type="file" 
-              id="csv-file-input"
-              accept=".csv" 
-              className="hidden"
-              onChange={handleFileImport}
-            />
-            <input 
-              type="file" 
-              id="excel-file-input" 
-              accept=".xlsx,.xls" 
-              className="hidden"
-              onChange={handleFileImport}
-            />
           </div>
           
           {/* Download Button & Dropdown */}
@@ -332,7 +312,7 @@ export default function DashboardPage() {
                   onClick={() => handleDownload('excel')}
                 >
                   Download as Excel
-              </button>
+                </button>
               </div>
             </div>
           </div>
@@ -575,16 +555,6 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
-
-      {importLoading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-purple mx-auto mb-4"></div>
-            <p className="text-lg font-medium">Importing data...</p>
-            <p className="text-sm text-gray-500">This may take a moment for large files</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

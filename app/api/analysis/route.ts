@@ -4,7 +4,6 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function GET() {
-  // Get actual user counts by plan
   const usersByPlan = await prisma.user.groupBy({
     by: ['plan'],
     _count: {
@@ -12,15 +11,12 @@ export async function GET() {
     }
   });
   
-  // Simulated data since we've removed ChurnFeature model
   const total = 500;
   const churned = 65;
   
-  // Create simulated plan data based on actual user distribution
   const byPlan = usersByPlan.map(planData => {
     const plan = planData.plan;
     const total = planData._count.id;
-    // Simulate different churn rates by plan
     let churnRate;
     if (plan === 'free') churnRate = 0.20;
     else if (plan === 'basic') churnRate = 0.12;

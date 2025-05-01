@@ -13,7 +13,8 @@ export async function GET(request: Request) {
     const riskCategory = searchParams.get('riskCategory') || '';
     const datePeriod = searchParams.get('datePeriod') || '';
     
-    const skip = (page - 1) * limit;
+    const isReportRequest = limit > 100;
+    const skip = isReportRequest ? 0 : (page - 1) * limit;
     
     const where: Prisma.UserWhereInput = search 
       ? {
@@ -51,9 +52,6 @@ export async function GET(request: Request) {
           break;
         case '3months':
           fromDate = subMonths(now, 3);
-          break;
-        case '1year':
-          fromDate = subYears(now, 1);
           break;
         default:
           fromDate = new Date(0); 

@@ -51,15 +51,19 @@ export default function ChatBot() {
       icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
     },
     {
-      title: 'Upgrade Plan',
-      description: 'Explore premium features',
-      path: '/dashboard/settings',
-      icon: 'M13 10V3L4 14h7v7l9-11h-7z'
+      title: 'Retention Strategies',
+      description: 'Get personalized retention recommendations',
+      path: '/dashboard/retention-strategies',
+      icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'
     }
   ];
 
   const accurateResponses = {
-    algorithm: "Our churn prediction system uses a weighted factor model rather than traditional machine learning algorithms. It calculates churn probability based on four key factors: subscription plan type, activity recency, engagement level, and revenue contribution. Each factor has specific weights (e.g., free plans add +0.25 to churn probability, while high activity reduces it). The model classifies users as Low Risk (<30% probability), Medium Risk (30-80%), or High Risk (>80%)."
+    algorithm: "Our churn prediction system uses a weighted factor model rather than traditional machine learning algorithms. It calculates churn probability based on four key factors: subscription plan type, activity recency, engagement level, and revenue contribution. Each factor has specific weights (e.g., free plans add +0.25 to churn probability, while high activity reduces it). The model classifies users as Low Risk (<30% probability), Medium Risk (30-80%), or High Risk (>80%).",
+    
+    retentionStrategies: "Our system offers personalized retention strategies based on your customer data. We analyze factors like high-risk percentages, customer plan distribution, and user activity to recommend the most effective strategies for your specific situation. The strategies include Personalized Onboarding, Proactive Customer Success, Value-Driven Feature Updates, Loyalty Programs, Enhanced Customer Education, and Win-Back Campaigns. Each strategy comes with detailed implementation steps and is ranked by its relevance to your business situation.",
+    
+    retentionFeatures: "The Retention Strategies feature provides data-driven recommendations tailored to your customer base. It analyzes your current churn risk levels, customer plan distribution, and engagement patterns to prioritize the most effective retention tactics. Each strategy is assigned a relevance score and includes specific implementation steps. You can access this feature from the 'Get Retention Strategies' option in the dashboard sidebar."
   };
 
   const isAlgorithmQuestion = (question: string): boolean => {
@@ -77,13 +81,32 @@ export default function ChatBot() {
     return keywords.some(keyword => question.toLowerCase().includes(keyword));
   };
 
+  const isRetentionQuestion = (question: string): boolean => {
+    const keywords = [
+      'retention strategies',
+      'retention strategy',
+      'how to retain',
+      'reduce churn',
+      'prevent churn',
+      'stop churning',
+      'keep customers',
+      'customer retention',
+      'retention plan',
+      'retention feature'
+    ];
+    
+    return keywords.some(keyword => question.toLowerCase().includes(keyword));
+  };
+
   const getContextFromPath = () => {
-    if (pathname?.includes('/dashboard') && !pathname?.includes('/analytics') && !pathname?.includes('/churn-prediction') && !pathname?.includes('/settings')) {
+    if (pathname?.includes('/dashboard') && !pathname?.includes('/analytics') && !pathname?.includes('/churn-prediction') && !pathname?.includes('/settings') && !pathname?.includes('/retention-strategies')) {
       return 'dashboard overview showing churn metrics, risk distribution, and recent predictions';
     } else if (pathname?.includes('/analytics')) {
       return 'customer analytics showing churn rates, plan distribution, and activity metrics';
     } else if (pathname?.includes('/churn-prediction')) {
       return 'churn prediction interface with user database and prediction capabilities';
+    } else if (pathname?.includes('/retention-strategies')) {
+      return 'data-driven customer retention strategies with personalized recommendations';
     } else if (pathname?.includes('/settings')) {
       return 'plan upgrade options and subscription settings';
     }
@@ -131,6 +154,16 @@ export default function ChatBot() {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: accurateResponses.algorithm,
+        showOptions: false
+      }]);
+      setIsLoading(false);
+      return;
+    }
+    
+    if (isRetentionQuestion(input)) {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: accurateResponses.retentionStrategies,
         showOptions: false
       }]);
       setIsLoading(false);
@@ -187,6 +220,16 @@ export default function ChatBot() {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: accurateResponses.algorithm,
+        showOptions: false
+      }]);
+      setIsLoading(false);
+      return;
+    }
+    
+    if (isRetentionQuestion(question)) {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: accurateResponses.retentionStrategies,
         showOptions: false
       }]);
       setIsLoading(false);
@@ -304,11 +347,80 @@ export default function ChatBot() {
                   <div className="mt-3">
                     <p className="text-xs text-gray-500 mb-2">Quick questions:</p>
                     <div className="flex flex-wrap gap-2">
+                      {pathname === '/dashboard' && (
+                        <>
+                          <button 
+                            onClick={() => handleQuickQuestion("What does my churn risk distribution look like?")}
+                            className="bg-white border border-gray-200 rounded-md px-3 py-1 text-xs hover:bg-gray-50"
+                          >
+                            Churn risk distribution?
+                          </button>
+                          <button 
+                            onClick={() => handleQuickQuestion("How can I get a detailed report?")}
+                            className="bg-white border border-gray-200 rounded-md px-3 py-1 text-xs hover:bg-gray-50"
+                          >
+                            How to get a report?
+                          </button>
+                        </>
+                      )}
+                      
+                      {pathname === '/dashboard/churn-prediction' && (
+                        <>
+                          <button 
+                            onClick={() => handleQuickQuestion("How accurate are these predictions?")}
+                            className="bg-white border border-gray-200 rounded-md px-3 py-1 text-xs hover:bg-gray-50"
+                          >
+                            Prediction accuracy?
+                          </button>
+                          <button 
+                            onClick={() => handleQuickQuestion("What factors influence churn?")}
+                            className="bg-white border border-gray-200 rounded-md px-3 py-1 text-xs hover:bg-gray-50"
+                          >
+                            Churn factors?
+                          </button>
+                        </>
+                      )}
+                      
+                      {pathname === '/dashboard/analytics' && (
+                        <>
+                          <button 
+                            onClick={() => handleQuickQuestion("What trends should I look for?")}
+                            className="bg-white border border-gray-200 rounded-md px-3 py-1 text-xs hover:bg-gray-50"
+                          >
+                            Key trends?
+                          </button>
+                          <button 
+                            onClick={() => handleQuickQuestion("How to interpret these metrics?")}
+                            className="bg-white border border-gray-200 rounded-md px-3 py-1 text-xs hover:bg-gray-50"
+                          >
+                            Interpret metrics?
+                          </button>
+                        </>
+                      )}
+                      
+                      {pathname === '/dashboard/retention-strategies' && (
+                        <>
+                          <button 
+                            onClick={() => handleQuickQuestion("Which strategy is best for my business?")}
+                            className="bg-white border border-gray-200 rounded-md px-3 py-1 text-xs hover:bg-gray-50"
+                          >
+                            Best strategy?
+                          </button>
+                          <button 
+                            onClick={() => handleQuickQuestion("How to implement these strategies?")}
+                            className="bg-white border border-gray-200 rounded-md px-3 py-1 text-xs hover:bg-gray-50"
+                          >
+                            Implementation tips?
+                          </button>
+                        </>
+                      )}
+                      
+                      {/* Default questions that appear on all routes */}
                       <button 
                         onClick={() => handleQuickQuestion("How does the churn prediction work?")}
                         className="bg-white border border-gray-200 rounded-md px-3 py-1 text-xs hover:bg-gray-50"
                       >
-                        How does the prediction work?
+                        How does prediction work?
                       </button>
                       <button 
                         onClick={() => handleQuickQuestion("How can I reduce churn?")}
@@ -317,10 +429,10 @@ export default function ChatBot() {
                         How to reduce churn?
                       </button>
                       <button 
-                        onClick={() => handleQuickQuestion("Which customers are at high risk?")}
+                        onClick={() => handleQuickQuestion("What retention strategies do you recommend?")}
                         className="bg-white border border-gray-200 rounded-md px-3 py-1 text-xs hover:bg-gray-50"
                       >
-                        Who's at high risk?
+                        Recommended strategies?
                       </button>
                     </div>
                   </div>

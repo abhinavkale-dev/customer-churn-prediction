@@ -1,5 +1,6 @@
 import React from 'react';
 import PricingCard from './PricingCard';
+import { motion } from 'framer-motion';
 
 const PricingSection = () => {
   const freePlanFeatures = [
@@ -29,18 +30,36 @@ const PricingSection = () => {
   return (
     <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Choose Your Plan</h2>
-          <p className="text-xl text-gray-600">
+        <motion.div 
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+        >
+          <motion.h2 
+            className="text-4xl font-bold mb-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            Choose Your Plan
+          </motion.h2>
+          <motion.p 
+            className="text-xl text-gray-600"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
             Select the perfect plan for your business needs. All plans include our core prediction engine.
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           <PricingCard
             title="Free Plan"
             description="Free tier with limited features."
             price="0"
             features={freePlanFeatures}
+            delay={0.2}
           />
           <PricingCard
             title="Basic Plan"
@@ -48,12 +67,14 @@ const PricingSection = () => {
             price="100"
             features={basicPlanFeatures}
             highlighted
+            delay={0.4}
           />
           <PricingCard
             title="Pro Plan"
             description="Pro tier for power users."
             price="300"
             features={proPlanFeatures}
+            delay={0.6}
           />
         </div>
       </div>

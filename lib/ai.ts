@@ -41,7 +41,6 @@ export async function generateChurnExplanation(userData: {
   }
 }
 
-// Function to generate retention recommendations
 export async function generateRetentionStrategies(userData: {
   plan: string;
   daysSinceActivity: number;

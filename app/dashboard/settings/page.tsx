@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import prisma from '@/lib/prisma';
 
 interface User {
   id: string;
@@ -51,29 +50,43 @@ export default function SettingsPage() {
       setUpdateSuccess(null);
       setUpdateError(null);
       
-      setTimeout(() => {
-        setUser(prev => prev ? { ...prev, plan: newPlan } : null);
-        setUpdateSuccess(`Successfully updated to ${newPlan} plan`);
+      const response = await fetch('/api/update-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: mockUserId,
+          oldPlan: user?.plan || 'free',
+          newPlan: newPlan
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update plan');
+      }
+
+      setUser(prev => prev ? { ...prev, plan: newPlan } : null);
+      setUpdateSuccess(`Successfully updated to ${newPlan} plan`);
+      
+      if (user?.plan !== newPlan) {
+        localStorage.setItem('planChange', JSON.stringify({
+          plan: newPlan,
+          timestamp: new Date().toISOString()
+        }));
         
-        if (user?.plan !== newPlan) {
-          localStorage.setItem('planChange', JSON.stringify({
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'planChange',
+          newValue: JSON.stringify({
             plan: newPlan,
             timestamp: new Date().toISOString()
-          }));
-          
-          window.dispatchEvent(new StorageEvent('storage', {
-            key: 'planChange',
-            newValue: JSON.stringify({
-              plan: newPlan,
-              timestamp: new Date().toISOString()
-            })
-          }));
-        }
-        
-        setTimeout(() => {
-          setUpdateSuccess(null);
-        }, 3000);
-      }, 500);
+          })
+        }));
+      }
+      
+      setTimeout(() => {
+        setUpdateSuccess(null);
+      }, 3000);
       
     } catch (error) {
       console.error('Error updating plan:', error);

@@ -7,26 +7,20 @@ interface PaginationProps {
 }
 
 export function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
-  // Generate an array of page numbers to display
   const getPageNumbers = () => {
     const pages = [];
-    // Always show first page
     if (currentPage > 3) {
       pages.push(1);
-      // Add ellipsis if there are pages between first page and currentPage - 1
       if (currentPage > 4) {
         pages.push('...');
       }
     }
 
-    // Show current page and adjacent pages
     for (let i = Math.max(1, currentPage - 1); i <= Math.min(totalPages, currentPage + 1); i++) {
       pages.push(i);
     }
 
-    // Always show last page
     if (currentPage < totalPages - 2) {
-      // Add ellipsis if there are pages between currentPage + 1 and last page
       if (currentPage < totalPages - 3) {
         pages.push('...');
       }

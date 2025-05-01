@@ -37,7 +37,17 @@ export async function POST(request: Request) {
       4. Revenue Contribution: >$200 subtracts -0.25, >$50 subtracts -0.15, >$0 subtracts -0.05
     - Users are classified as Low Risk (<0.3 probability), Medium Risk (0.3-0.8), or High Risk (>0.8)
     
+    - The application also offers personalized retention strategies based on user data analysis, which include:
+      1. Personalized Onboarding: Helps new users see value faster through tailored onboarding flows
+      2. Proactive Customer Success: Early intervention for users showing disengagement signs
+      3. Value-Driven Feature Updates: Developing features based on user feedback to improve stickiness
+      4. Loyalty Programs: Rewarding long-term customers with exclusive benefits
+      5. Enhanced Customer Education: Developing better knowledge resources to increase product mastery
+      6. Win-Back Campaigns: Targeted campaigns to recover recently churned customers
+    - Each strategy is assigned a relevance score based on current customer data patterns
+    
     If asked about the algorithm, machine learning, or prediction methods, ALWAYS provide the accurate information above.
+    If asked about retention strategies or how to reduce churn, explain the personalized strategy system.
     
     Keep your responses brief, informative, and focused on helping the user understand churn analytics, 
     predictions, and retention strategies. Don't make up specific data about the user's company 

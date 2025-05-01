@@ -15,7 +15,6 @@ export async function GET() {
       count: item._count.id
     }));
     
-    // Simulated churn data since we've removed ChurnFeature model
     const simulatedChurnData = [
       { plan: 'Free', churned: 45, retained: 155 },
       { plan: 'Basic', churned: 15, retained: 85 },
@@ -29,7 +28,6 @@ export async function GET() {
       { min: 31, max: Infinity, label: '31+ days' }
     ];
     
-    // Simulated activity vs churn data
     const activityVsChurn = [
       { activityRange: '0-10 days', churned: 5, retained: 195 },
       { activityRange: '11-20 days', churned: 15, retained: 85 },
@@ -39,7 +37,7 @@ export async function GET() {
     
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
     const churnTrend = months.map(month => {
-      const baseChurnRate = 12.5; // Assumed average churn rate
+      const baseChurnRate = 12.5; 
       const churnRate = baseChurnRate + (Math.random() * 4 - 2); 
       
       return {
