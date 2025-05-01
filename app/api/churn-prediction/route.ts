@@ -1,37 +1,26 @@
-import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import * as fs from 'fs';
 import * as path from 'path';
 import mlChurnPredictor from '@/lib/ml-churn-predictor';
 import type { ChurnPredictionInput } from '@/lib/ml-churn-predictor';
 
-/**
- * Risk thresholds to achieve target distribution
- * - Low Risk: 45% of users
- * - Medium Risk: 35% of users
- * - High Risk: 20% of users
- */
 const RISK_THRESHOLDS = {
   LOW_MEDIUM: 0.35,
   MEDIUM_HIGH: 0.65,
 };
 
-// Configuration
 const MODEL_DIR = path.join(process.cwd(), 'public', 'models');
 const STATS_PATH = path.join(MODEL_DIR, 'feature-stats.json');
-const ENABLE_CALIBRATION = true; // Apply post-processing calibration to match target distribution
+const ENABLE_CALIBRATION = true; 
 
-// Stats for dynamic feature normalization
 interface FeatureStats {
   daysSinceActivity: { max: number; min: number; mean: number };
   eventsLast30: { max: number; min: number; mean: number };
   revenueLast30: { max: number; min: number; mean: number };
-  timestamp: number; // When stats were calculated
+  timestamp: number;
 }
 
-/**
- * Get risk category based on probability
- */
+
 function getRiskCategory(probability: number): string {
   if (probability >= RISK_THRESHOLDS.MEDIUM_HIGH) {
     return 'High Risk';
@@ -42,14 +31,8 @@ function getRiskCategory(probability: number): string {
   }
 }
 
-/**
- * Calibrate predictions to match the target distribution:
- * - Low Risk: 45%
- * - Medium Risk: 35%
- * - High Risk: 20%
- */
+
 function calibratePredictions(predictions: any[]) {
-  // Use the ML predictor's calibration function
   return mlChurnPredictor.calibratePredictions(predictions, { 
     low: 0.45, 
     medium: 0.35, 
@@ -57,9 +40,6 @@ function calibratePredictions(predictions: any[]) {
   });
 }
 
-/**
- * Machine Learning-based churn prediction
- */
 async function predictChurnML(data: {
   plan: string;
   daysSinceActivity: number;
@@ -68,7 +48,6 @@ async function predictChurnML(data: {
   userId?: string; 
 }) {
   try {
-    // Use the ML predictor to make a prediction
     const prediction = mlChurnPredictor.predict({
       plan: data.plan,
       daysSinceActivity: data.daysSinceActivity,
@@ -76,7 +55,6 @@ async function predictChurnML(data: {
       revenueLast30: data.revenueLast30
     });
     
-    // Get risk category based on probability
     const riskCategory = mlChurnPredictor.getRiskCategory(prediction.probability);
     
     return {
@@ -91,37 +69,29 @@ async function predictChurnML(data: {
   }
 }
 
-/**
- * Get statistics from the database to calibrate the model
- */
 async function getDataStatistics() {
   try {
-    // Get aggregated statistics from user data and activities
     const users = await prisma.user.findMany({
-      take: 1000, // Limit for performance
+      take: 1000,
     });
     
-    // Get existing predictions for learning
     const predictions = await prisma.churnPrediction.findMany({
-      take: 1000, // Limit for performance
+      take: 1000,
     });
     
-    // Calculate average days since activity
     const activities = await prisma.activity.findMany({
       orderBy: {
         timestamp: 'desc'
       },
-      take: 1000, // Limit for performance
+      take: 1000,
     });
     
-    // Group users by plan
     const usersByPlan = {
       free: users.filter(u => u.plan === 'free'),
       basic: users.filter(u => u.plan === 'basic'),
       premium: users.filter(u => u.plan === 'premium')
     };
     
-    // Calculate average churn probability by plan (if we have predictions)
     const planFactors = {
       free: 0.1,
       basic: 0.05,
@@ -129,11 +99,9 @@ async function getDataStatistics() {
     };
     
     if (predictions.length > 0) {
-      // Map predictions to users
       const predictionByUserId = new Map();
       predictions.forEach(p => predictionByUserId.set(p.userId, p));
       
-      // Calculate average probability by plan
       const planProbabilities = {
         free: [] as number[],
         basic: [] as number[],
@@ -148,7 +116,6 @@ async function getDataStatistics() {
         }
       });
       
-      // Calculate averages and adjust factors
       const avgAllProb = predictions.reduce((sum, p) => sum + p.probability, 0) / predictions.length;
       
       for (const plan of ['free', 'basic', 'premium'] as const) {
@@ -159,8 +126,7 @@ async function getDataStatistics() {
       }
     }
     
-    // Calculate average days since activity
-    let avgDaysSinceActivity = 10; // Default
+    let avgDaysSinceActivity = 10; 
     if (activities.length > 0) {
       const now = new Date();
       const daysSinceActivities = activities.map(a => {
@@ -169,7 +135,6 @@ async function getDataStatistics() {
       avgDaysSinceActivity = daysSinceActivities.reduce((sum, days) => sum + days, 0) / daysSinceActivities.length;
     }
     
-    // Calculate average events in last 30 days per user
     const userActivities = new Map<string, number>();
     activities.forEach(activity => {
       const count = userActivities.get(activity.userId) || 0;
@@ -177,32 +142,26 @@ async function getDataStatistics() {
     });
     const avgEventsLast30 = userActivities.size > 0 
       ? Array.from(userActivities.values()).reduce((sum, count) => sum + count, 0) / userActivities.size
-      : 30; // Default
+      : 30;
     
-    // Calculate average revenue
     const avgRevenueLast30 = usersByPlan.free.length * 0 + usersByPlan.basic.length * 100 + usersByPlan.premium.length * 300;
-    const avgRevenuePerUser = users.length > 0 ? avgRevenueLast30 / users.length : 100; // Default
+    const avgRevenuePerUser = users.length > 0 ? avgRevenueLast30 / users.length : 100;
     
-    // Use this data to train the ML model if we have enough historical data
     if (users.length > 100 && predictions.length > 100) {
-      // Map predictions to users for faster lookup
       const predictionByUserId = new Map();
       predictions.forEach(p => predictionByUserId.set(p.userId, p));
       
-      // Prepare training data from historical predictions
       const trainingData = users
         .map(user => {
           const prediction = predictionByUserId.get(user.id);
           const userActivities = activities.filter(a => a.userId === user.id);
           
-          // Calculate activity metrics
           const now = new Date();
           const lastActivity = userActivities.length > 0 ? new Date(userActivities[0].timestamp) : new Date(user.createdAt);
           const daysSinceActivity = Math.floor((now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
           const eventsLast30 = userActivities.length;
           const revenueLast30 = userActivities.reduce((sum, a) => sum + a.revenue, 0);
           
-          // Only include users with predictions
           if (prediction) {
             return {
               input: {
@@ -212,7 +171,7 @@ async function getDataStatistics() {
                 revenueLast30
               },
               output: {
-                churned: prediction.willChurn === true // Ensure boolean
+                churned: prediction.willChurn === true
               }
             };
           }
@@ -220,7 +179,6 @@ async function getDataStatistics() {
         })
         .filter((item): item is { input: ChurnPredictionInput, output: { churned: boolean } } => item !== null);
       
-      // Train the model asynchronously if we have data
       if (trainingData.length > 50) {
         console.log(`[${Date.now()}] Training ML model with ${trainingData.length} historical data points`);
         mlChurnPredictor.train(trainingData).then(success => {
@@ -229,7 +187,6 @@ async function getDataStatistics() {
       }
     }
     
-    // Save feature statistics for normalization
     calculateAndSaveFeatureStats(users, activities);
     
     return {
@@ -240,7 +197,6 @@ async function getDataStatistics() {
     };
   } catch (error) {
     console.error('Error getting statistics:', error);
-    // Return default values if statistics can't be calculated
     return {
       planFactors: {
         free: 0.1,
@@ -254,31 +210,24 @@ async function getDataStatistics() {
   }
 }
 
-/**
- * Calculate and save feature statistics for normalization
- */
+
 async function calculateAndSaveFeatureStats(users: any[], activities: any[]) {
   try {
-    // Skip in browser environments or if no data
     if (typeof window !== 'undefined' || users.length === 0 || activities.length === 0) return;
     
-    // If stats file exists and was updated in the last hour, skip recalculation
     try {
       if (fs.existsSync(STATS_PATH)) {
         const stats = fs.statSync(STATS_PATH);
         const fileAgeMs = Date.now() - stats.mtimeMs;
         
-        // Only update stats file once per hour max
         if (fileAgeMs < 60 * 60 * 1000) {
           return;
         }
       }
     } catch (err) {
-      // Continue if we can't check the file
       console.error('Error checking stats file age:', err);
     }
     
-    // Create directory if it doesn't exist
     if (!fs.existsSync(MODEL_DIR)) {
       try {
         fs.mkdirSync(MODEL_DIR, { recursive: true });
@@ -288,42 +237,34 @@ async function calculateAndSaveFeatureStats(users: any[], activities: any[]) {
       }
     }
     
-    // Calculate activity statistics
     const daysSinceActivities: number[] = [];
     const eventsLast30: number[] = [];
     const revenueLast30: number[] = [];
     
-    // Process user data
     const now = new Date();
     const userActivitiesMap = new Map<string, any[]>();
     
-    // Group activities by user
     activities.forEach(activity => {
       const userActivities = userActivitiesMap.get(activity.userId) || [];
       userActivities.push(activity);
       userActivitiesMap.set(activity.userId, userActivities);
     });
     
-    // Calculate metrics for each user
     users.forEach(user => {
       const userActivities = userActivitiesMap.get(user.id) || [];
       
-      // Days since last activity
       if (userActivities.length > 0) {
         const lastActivity = new Date(userActivities[0].timestamp);
         const days = Math.floor((now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
         daysSinceActivities.push(days);
       }
       
-      // Events count
       eventsLast30.push(userActivities.length);
       
-      // Revenue
       const revenue = userActivities.reduce((sum, a) => sum + a.revenue, 0);
       revenueLast30.push(revenue);
     });
     
-    // Calculate stats
     const stats: FeatureStats = {
       daysSinceActivity: {
         max: Math.max(...daysSinceActivities, 1),
@@ -346,7 +287,6 @@ async function calculateAndSaveFeatureStats(users: any[], activities: any[]) {
       timestamp: Date.now()
     };
     
-    // Save stats
     try {
       fs.writeFileSync(STATS_PATH, JSON.stringify(stats, null, 2));
       console.log('Feature statistics saved');
@@ -358,12 +298,8 @@ async function calculateAndSaveFeatureStats(users: any[], activities: any[]) {
   }
 }
 
-/**
- * Load feature statistics for normalization
- */
 function loadFeatureStats(): FeatureStats {
   try {
-    // Skip in browser environment
     if (typeof window !== 'undefined') {
       return {
         daysSinceActivity: { max: 30, min: 0, mean: 10 },
@@ -373,12 +309,10 @@ function loadFeatureStats(): FeatureStats {
       };
     }
     
-    // Check if stats file exists
     if (fs.existsSync(STATS_PATH)) {
       const statsData = fs.readFileSync(STATS_PATH, 'utf8');
       return JSON.parse(statsData);
     } else {
-      // Default stats
       return {
         daysSinceActivity: { max: 30, min: 0, mean: 10 },
         eventsLast30: { max: 100, min: 0, mean: 30 },
@@ -397,9 +331,7 @@ function loadFeatureStats(): FeatureStats {
   }
 }
 
-/**
- * Fallback prediction method if other methods fail
- */
+
 function fallbackPrediction(data: {
   plan: string;
   daysSinceActivity: number;
@@ -435,14 +367,13 @@ function fallbackPrediction(data: {
     probability -= 0.05;
   }
   
-  // Add randomness for user ID
   if (data.userId) {
     const idSum = data.userId.split('').reduce((sum, char, index) => {
       return sum + (char.charCodeAt(0) * (index + 1));
     }, 0);
     
-    const randomFactor = (idSum % 100) / 500; // Between 0 and 0.2
-    probability += randomFactor - 0.1; // Between -0.1 and 0.1
+    const randomFactor = (idSum % 100) / 500; 
+    probability += randomFactor - 0.1; 
   }
   
   probability = Math.max(0.05, Math.min(0.95, probability));
@@ -466,18 +397,15 @@ export async function POST(request: Request) {
     if (Array.isArray(body)) {
       console.log(`[${startTime}] Processing batch prediction for ${body.length} users`);
       
-      // Process in smaller batches to avoid timeouts
       const BATCH_SIZE = 100;
       const predictions = [];
       
       try {
-        // Process in batches
         for (let i = 0; i < body.length; i += BATCH_SIZE) {
           const batchStartTime = Date.now();
           const batch = body.slice(i, i + BATCH_SIZE);
           console.log(`[${batchStartTime}] Processing batch ${i/BATCH_SIZE + 1}/${Math.ceil(body.length/BATCH_SIZE)} (${batch.length} users)`);
           
-          // Process each user in the batch
           const batchPredictions = [];
           for (let j = 0; j < batch.length; j++) {
             const item = batch[j];
@@ -500,7 +428,6 @@ export async function POST(request: Request) {
               batchPredictions.push(result);
             } catch (userError) {
               console.error(`Error predicting for user ${userId || 'unknown'}:`, userError);
-              // Continue with other users
             }
           }
           
@@ -510,7 +437,6 @@ export async function POST(request: Request) {
         
         console.log(`[${Date.now()}] All batches processed. Generated ${predictions.length} predictions`);
         
-        // Apply calibration if enabled
         console.log(`[${Date.now()}] Applying calibration: ${ENABLE_CALIBRATION ? 'enabled' : 'disabled'}`);
         let finalPredictions = predictions;
         
@@ -526,12 +452,10 @@ export async function POST(request: Request) {
         const lowRisk = finalPredictions.filter(p => p.riskCategory === 'Low Risk').length;
         console.log(`[${Date.now()}] Risk distribution: High: ${highRisk} (${Math.round(highRisk/finalPredictions.length*100)}%), Medium: ${mediumRisk} (${Math.round(mediumRisk/finalPredictions.length*100)}%), Low: ${lowRisk} (${Math.round(lowRisk/finalPredictions.length*100)}%)`);
         
-        // Save predictions to database for users that exist
         let savedCount = 0;
         console.log(`[${Date.now()}] Starting database saves...`);
         
         try {
-          // First, fetch all existing users in one query to avoid N+1 queries
           console.log(`[${Date.now()}] Fetching all existing users in one batch...`);
           const allUserIds = body.map(item => item.userId).filter(Boolean);
           const existingUsers = await prisma.user.findMany({
@@ -545,21 +469,17 @@ export async function POST(request: Request) {
             }
           });
           
-          // Create a set of existing user IDs for fast lookup
           const existingUserIds = new Set(existingUsers.map(user => user.id));
           console.log(`[${Date.now()}] Found ${existingUserIds.size} existing users out of ${allUserIds.length} requested`);
           
-          // Save in batches to avoid timeouts
           for (let i = 0; i < body.length && i < finalPredictions.length; i += BATCH_SIZE) {
             const saveBatchStartTime = Date.now();
             const batchSize = Math.min(BATCH_SIZE, body.length - i, finalPredictions.length - i);
             console.log(`[${saveBatchStartTime}] Saving batch ${i/BATCH_SIZE + 1}/${Math.ceil(body.length/BATCH_SIZE)} (${batchSize} predictions)`);
             
-            // Create arrays for batch operations
             const creates = [];
             const updates = [];
             
-            // Process each user in the batch
             for (let j = 0; j < batchSize; j++) {
               const idx = i + j;
               const userId = body[idx].userId;
@@ -567,9 +487,7 @@ export async function POST(request: Request) {
               
               if (!userId) continue;
               
-              // Check if user exists using our pre-fetched set
               if (existingUserIds.has(userId)) {
-                // User exists, add to updates
                 updates.push({
                   where: { userId },
                   data: {
@@ -585,9 +503,7 @@ export async function POST(request: Request) {
               }
             }
             
-            // Perform batch operations if there are any
             if (updates.length > 0) {
-              // Process updates in smaller chunks to avoid potential issues
               const updateChunkSize = 25;
               for (let k = 0; k < updates.length; k += updateChunkSize) {
                 const updateChunk = updates.slice(k, k + updateChunkSize);
@@ -629,7 +545,7 @@ export async function POST(request: Request) {
         return new Response(JSON.stringify({ 
           error: 'Error during batch prediction',
           message: batchError.message,
-          predictions: predictions // Return any predictions we did manage to generate
+          predictions: predictions 
         }), {
           status: 500,
           headers: {
@@ -650,7 +566,6 @@ export async function POST(request: Request) {
       });
     }
     
-    // Call ML prediction for single user
     const result = await predictChurnML({
       plan,
       daysSinceActivity,
@@ -659,19 +574,16 @@ export async function POST(request: Request) {
       userId
     });
     
-    // No calibration for single prediction case
     const finalResult = result;
     
     if (userId) {
       try {
-        // Check if user exists before attempting to save the prediction
         const userExists = await prisma.user.findUnique({
           where: { id: userId },
           select: { id: true }
         });
         
         if (userExists) {
-          // We'll include confidence in the database
           await prisma.churnPrediction.upsert({
             where: { userId },
             update: {
@@ -679,16 +591,12 @@ export async function POST(request: Request) {
               willChurn: finalResult.willChurn,
               riskCategory: finalResult.riskCategory,
               predictedAt: new Date(),
-              // If your schema has a confidence field, uncomment the line below
-              // confidence: finalResult.confidence
             },
             create: {
               userId,
               probability: finalResult.probability,
               willChurn: finalResult.willChurn,
               riskCategory: finalResult.riskCategory,
-              // If your schema has a confidence field, uncomment the line below
-              // confidence: finalResult.confidence
               predictedAt: new Date()
             }
           });

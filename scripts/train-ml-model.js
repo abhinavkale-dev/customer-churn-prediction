@@ -1,5 +1,5 @@
-// CommonJS version of the training script
-const brain = require('brain.js');
+// Main ML training script using ml-regression
+const { MultivariateLinearRegression } = require('ml-regression');
 const fs = require('fs');
 const path = require('path');
 
@@ -12,14 +12,7 @@ const MODEL_PATH = path.join(MODEL_DIR, 'churn-model.json');
  */
 class MLChurnPredictor {
   constructor() {
-    // Initialize neural network with configuration
-    this.network = new brain.NeuralNetwork({
-      hiddenLayers: [6, 4], // Two hidden layers with 6 and 4 neurons
-      activation: 'sigmoid',  // Sigmoid activation function
-      iterations: 20000,      // Maximum training iterations
-      learningRate: 0.1,      // Learning rate
-      errorThresh: 0.005      // Error threshold to stop training
-    });
+    this.model = null;
     
     this.stats = {
       daysSinceActivity: { max: 30, min: 0, mean: 10 },
@@ -45,7 +38,7 @@ class MLChurnPredictor {
         }
         
         if (parsedData.model) {
-          this.network.fromJSON(parsedData.model);
+          this.model = MultivariateLinearRegression.load(parsedData.model);
           this.modelLoaded = true;
           console.log('Churn prediction model loaded from disk');
           return true;
@@ -71,7 +64,7 @@ class MLChurnPredictor {
       
       // Save model and stats
       const modelData = {
-        model: this.network.toJSON(),
+        model: this.model?.toJSON(),
         stats: this.stats,
         timestamp: Date.now()
       };
@@ -86,32 +79,49 @@ class MLChurnPredictor {
   }
   
   /**
-   * Normalize input features using min-max scaling
+   * Normalize a single feature using min-max scaling
    */
-  normalizeInput(input) {
+  normalizeFeature(value, min, max) {
+    return (value - min) / (max - min || 1);
+  }
+  
+  /**
+   * Prepare feature vector from input
+   */
+  prepareFeatures(input) {
     // One-hot encode the plan
     const plan_free = input.plan === 'free' ? 1 : 0;
     const plan_basic = input.plan === 'basic' ? 1 : 0;
     const plan_premium = input.plan === 'premium' ? 1 : 0;
     
-    // Min-max normalization for numerical features
-    const daysSinceActivity = (input.daysSinceActivity - this.stats.daysSinceActivity.min) / 
-      (this.stats.daysSinceActivity.max - this.stats.daysSinceActivity.min || 1);
+    // Normalize numerical features
+    const daysSinceActivity = this.normalizeFeature(
+      input.daysSinceActivity,
+      this.stats.daysSinceActivity.min,
+      this.stats.daysSinceActivity.max
+    );
     
-    const eventsLast30 = (input.eventsLast30 - this.stats.eventsLast30.min) / 
-      (this.stats.eventsLast30.max - this.stats.eventsLast30.min || 1);
+    const eventsLast30 = this.normalizeFeature(
+      input.eventsLast30,
+      this.stats.eventsLast30.min,
+      this.stats.eventsLast30.max
+    );
     
-    const revenueLast30 = (input.revenueLast30 - this.stats.revenueLast30.min) / 
-      (this.stats.revenueLast30.max - this.stats.revenueLast30.min || 1);
+    const revenueLast30 = this.normalizeFeature(
+      input.revenueLast30,
+      this.stats.revenueLast30.min,
+      this.stats.revenueLast30.max
+    );
     
-    return {
+    // Return feature vector
+    return [
       plan_free,
-      plan_basic,
+      plan_basic, 
       plan_premium,
       daysSinceActivity,
       eventsLast30,
       revenueLast30
-    };
+    ];
   }
   
   /**
@@ -159,17 +169,32 @@ class MLChurnPredictor {
       const inputData = trainingData.map(d => d.input);
       this.updateStats(inputData);
       
-      // Prepare data for neural network
-      const normalizedData = trainingData.map(item => ({
-        input: this.normalizeInput(item.input),
-        output: { 
-          churn_probability: item.output.churned ? 1 : 0 
-        }
-      }));
+      // Prepare data for regression
+      const inputs = trainingData.map(item => this.prepareFeatures(item.input));
+      const outputs = trainingData.map(item => item.output.churned ? 1 : 0);
       
-      // Train the model
-      const result = await this.network.trainAsync(normalizedData);
-      console.log(`Model trained: ${result.iterations} iterations, error: ${result.error}`);
+      // Ensure we have valid data
+      if (inputs.length === 0 || outputs.length === 0) {
+        console.error('No valid training data after preprocessing');
+        return false;
+      }
+      
+      console.log(`Input shape: ${inputs.length}x${inputs[0].length}`);
+      console.log(`Output shape: ${outputs.length}`);
+      
+      // Check that each input has the expected number of features
+      const featureCount = inputs[0].length;
+      const validInputs = inputs.every(input => input.length === featureCount);
+      
+      if (!validInputs) {
+        console.error('Inconsistent feature counts in input data');
+        return false;
+      }
+      
+      // Train the model - convert outputs to 2D array [[y1], [y2], ...]
+      const outputsAs2D = outputs.map(y => [y]);
+      this.model = new MultivariateLinearRegression(inputs, outputsAs2D);
+      console.log('Model trained successfully');
       
       // Save the model
       this.modelLoaded = true;
@@ -188,16 +213,18 @@ class MLChurnPredictor {
   predict(input) {
     try {
       // If model isn't loaded, return a fallback prediction
-      if (!this.modelLoaded) {
+      if (!this.modelLoaded || !this.model) {
         return this.fallbackPrediction(input);
       }
       
-      // Normalize input
-      const normalizedInput = this.normalizeInput(input);
+      // Prepare features
+      const features = this.prepareFeatures(input);
       
-      // Run prediction
-      const result = this.network.run(normalizedInput);
-      const probability = result.churn_probability;
+      // Make prediction
+      const rawPrediction = this.model.predict(features)[0];
+      
+      // Clamp probability between 0 and 1
+      const probability = Math.max(0, Math.min(1, rawPrediction));
       
       // Calculate confidence based on how far from 0.5 the prediction is
       const confidence = Math.abs(probability - 0.5) * 2; // 0 to 1 scale
