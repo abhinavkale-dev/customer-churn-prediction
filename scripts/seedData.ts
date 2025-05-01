@@ -82,7 +82,6 @@ async function seed() {
     console.log('Clearing existing data...');
     await prisma.activity.deleteMany({});
     await prisma.churnPrediction.deleteMany({});
-    await prisma.churnFeature.deleteMany({});
     await prisma.user.deleteMany({});
     
     console.log(`Creating ${NUM_USERS} users...`);
@@ -306,17 +305,6 @@ async function seed() {
         // Users with activity far below their plan's average
         churned = Math.random() < 0.5;
       }
-      
-      // Create churn feature entry
-      await prisma.churnFeature.create({
-        data: {
-          plan: user.plan,
-          daysSinceActivity,
-          eventsLast30,
-          revenueLast30,
-          churned
-        }
-      });
       
       // Create churn prediction for most users
       // In real-world, we would predict for all users

@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,15 +8,13 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  plan      String   @default("free") // "free", "basic", "premium"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  activities     Activity[]
+  id              String           @id @default(cuid())
+  email           String           @unique
+  name            String?
+  plan            String           @default("free")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  activities      Activity[]
   churnPrediction ChurnPrediction?
 }
 
@@ -29,31 +24,17 @@ model Activity {
   eventType String
   timestamp DateTime @default(now())
   revenue   Float    @default(0)
-  
-  // Relations
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ChurnPrediction {
-  id               String   @id @default(cuid())
-  userId           String   @unique
-  probability      Float
-  willChurn        Boolean
-  riskCategory     String
-  predictedAt      DateTime @default(now())
-  
-  // Relations
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model ChurnFeature {
-  id                String   @id @default(cuid())
-  plan              String // "free", "basic", "premium"
-  daysSinceActivity Int
-  eventsLast30      Int
-  revenueLast30     Float
-  churned           Boolean
-  createdAt         DateTime @default(now())
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  probability  Float
+  willChurn    Boolean
+  riskCategory String
+  predictedAt  DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model DailyReport {
@@ -67,9 +48,9 @@ model DailyReport {
 }
 
 model Subscription {
-  id           Int      @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   email        String
   plan         String
-  subscribedAt DateTime @default(now())
+  subscribedAt DateTime  @default(now())
   canceledAt   DateTime?
-} 
+}

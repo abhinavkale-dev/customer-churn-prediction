@@ -3,11 +3,13 @@ import Logo from './Logo';
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-100 pt-16 pb-8">
-      <div className="container">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+    <footer className="bg-gray-100 pt-16 pb-8 text-center">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 max-w-5xl mx-auto">
           <div>
-            <Logo />
+            <div className="flex justify-center">
+              <Logo />
+            </div>
             <p className="mt-4 text-gray-600">
               AI-powered customer churn prediction to help your business retain customers.
             </p>
@@ -40,7 +42,7 @@ const Footer = () => {
           </div>
         </div>
         <div className="border-t pt-8">
-          <p className="text-center text-gray-500">
+          <p className="text-gray-500">
             © {new Date().getFullYear()} Customer Churn Prediction. All rights reserved.
           </p>
         </div>

@@ -34,19 +34,6 @@ CREATE TABLE "ChurnPrediction" (
 );
 
 -- CreateTable
-CREATE TABLE "ChurnFeature" (
-    "id" TEXT NOT NULL,
-    "plan" TEXT NOT NULL,
-    "daysSinceActivity" INTEGER NOT NULL,
-    "eventsLast30" INTEGER NOT NULL,
-    "revenueLast30" DOUBLE PRECISION NOT NULL,
-    "churned" BOOLEAN NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "ChurnFeature_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "DailyReport" (
     "id" SERIAL NOT NULL,
     "reportDate" TIMESTAMP(3) NOT NULL,

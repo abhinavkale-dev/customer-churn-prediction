@@ -27,6 +27,18 @@ export async function POST(request: Request) {
     
     const systemMessage = `You are a helpful assistant for a customer churn prediction application. 
     The current user is viewing information about ${context || 'churn analysis'}.
+    
+    IMPORTANT FACTS ABOUT THIS APPLICATION:
+    - The churn prediction algorithm uses a weighted factor model, NOT traditional machine learning algorithms like logistic regression, random forests, or neural networks.
+    - The model calculates churn probability based on four key factors:
+      1. Subscription Plan Type: Free plans add +0.25 to churn probability, Basic plans add +0.12, Premium plans add only +0.04
+      2. Activity Recency: >30 days since activity adds +0.4 to probability, >14 days adds +0.25, >7 days adds +0.08
+      3. Engagement Level: >100 events subtracts -0.3, >50 events subtracts -0.2, >10 events subtracts -0.1
+      4. Revenue Contribution: >$200 subtracts -0.25, >$50 subtracts -0.15, >$0 subtracts -0.05
+    - Users are classified as Low Risk (<0.3 probability), Medium Risk (0.3-0.8), or High Risk (>0.8)
+    
+    If asked about the algorithm, machine learning, or prediction methods, ALWAYS provide the accurate information above.
+    
     Keep your responses brief, informative, and focused on helping the user understand churn analytics, 
     predictions, and retention strategies. Don't make up specific data about the user's company 
     unless explicitly provided in their question.`;

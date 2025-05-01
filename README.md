@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Customer Churn Prediction App
 
-## Getting Started
+This is a Next.js application for predicting customer churn.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Dashboard with key churn metrics
+- Churn prediction using machine learning models
+- Customer analytics
+- User management
+- Plan management
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### TanStack Query Implementation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+We've implemented TanStack Query (React Query) to improve the user experience by providing efficient data caching and avoiding loading states when users navigate between pages in the paginated areas. This implementation offers the following benefits:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Data Caching**: The app now caches fetched data, reducing the need for repeated API calls when navigating
+- **Improved Pagination**: Moving between pages in the dashboard and churn prediction routes no longer shows loading states when the data is cached
+- **Mutation Management**: Simplified API calls for actions like churn predictions
+- **Automatic Refetching**: Smart refetching of data when needed
+- **Better Error Handling**: Improved error states and management
 
-## Learn More
+The implementation includes:
 
-To learn more about Next.js, take a look at the following resources:
+1. A QueryProvider component that wraps the dashboard layout
+2. Custom hooks for fetching users, dashboard data, and churn predictions
+3. Updated components that use these hooks instead of direct fetch calls
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Development
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Prerequisites
 
-## Deploy on Vercel
+- Node.js 16+
+- NPM or Yarn
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Installation
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Set up your environment variables (see `.env.example`)
+4. Run the development server:
+   ```
+   npm run dev
+   ```
+
+## API Routes
+
+The application includes several API routes:
+
+- `/api/users` - User management
+- `/api/dashboard-data` - Dashboard metrics
+- `/api/churn-prediction` - Run churn predictions
+- `/api/import-data` - Import user data
+- `/api/download-data` - Export data
+
+

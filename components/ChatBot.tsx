@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -32,7 +31,6 @@ export default function ChatBot() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Navigation options for quick access
   const navigationOptions: NavigationOption[] = [
     {
       title: 'Dashboard',
@@ -59,6 +57,25 @@ export default function ChatBot() {
       icon: 'M13 10V3L4 14h7v7l9-11h-7z'
     }
   ];
+
+  const accurateResponses = {
+    algorithm: "Our churn prediction system uses a weighted factor model rather than traditional machine learning algorithms. It calculates churn probability based on four key factors: subscription plan type, activity recency, engagement level, and revenue contribution. Each factor has specific weights (e.g., free plans add +0.25 to churn probability, while high activity reduces it). The model classifies users as Low Risk (<30% probability), Medium Risk (30-80%), or High Risk (>80%)."
+  };
+
+  const isAlgorithmQuestion = (question: string): boolean => {
+    const keywords = [
+      'machine learning', 
+      'algorithm', 
+      'model', 
+      'prediction algorithm',
+      'how does the prediction work',
+      'what algorithm',
+      'what ml',
+      'what machine learning'
+    ];
+    
+    return keywords.some(keyword => question.toLowerCase().includes(keyword));
+  };
 
   const getContextFromPath = () => {
     if (pathname?.includes('/dashboard') && !pathname?.includes('/analytics') && !pathname?.includes('/churn-prediction') && !pathname?.includes('/settings')) {
@@ -105,11 +122,20 @@ export default function ChatBot() {
     
     if (!input.trim() || isLoading) return;
     
-
     const userMessage = { role: 'user' as const, content: input };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    
+    if (isAlgorithmQuestion(input)) {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: accurateResponses.algorithm,
+        showOptions: false
+      }]);
+      setIsLoading(false);
+      return;
+    }
     
     try {
       const context = getContextFromPath();
@@ -156,6 +182,16 @@ export default function ChatBot() {
     const userMessage = { role: 'user' as const, content: question };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
+    
+    if (isAlgorithmQuestion(question)) {
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: accurateResponses.algorithm,
+        showOptions: false
+      }]);
+      setIsLoading(false);
+      return;
+    }
     
     try {
       const context = getContextFromPath();
@@ -250,13 +286,13 @@ export default function ChatBot() {
                       <div 
                         key={idx}
                         onClick={() => handleNavigationClick(option.path)}
-                        className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 cursor-pointer transition-colors"
+                        className="bg-white border border-gray-200 rounded-md p-3 hover:bg-gray-50 cursor-pointer transition-colors"
                       >
                         <div className="flex items-center mb-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-brand-purple mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="h-4 w-4 mr-1 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={option.icon} />
                           </svg>
-                          <span className="text-sm font-medium">{option.title}</span>
+                          <span className="font-medium text-sm">{option.title}</span>
                         </div>
                         <p className="text-xs text-gray-500">{option.description}</p>
                       </div>
@@ -264,27 +300,27 @@ export default function ChatBot() {
                   </div>
                 )}
                 
-                {message.role === 'assistant' && i === messages.length - 1 && i > 0 && (
+                {message.role === 'assistant' && i === messages.length - 1 && (
                   <div className="mt-3">
                     <p className="text-xs text-gray-500 mb-2">Quick questions:</p>
                     <div className="flex flex-wrap gap-2">
                       <button 
-                        onClick={() => handleQuickQuestion("How do I predict customer churn?")}
-                        className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 py-1 px-2 rounded-full"
+                        onClick={() => handleQuickQuestion("How does the churn prediction work?")}
+                        className="bg-white border border-gray-200 rounded-md px-3 py-1 text-xs hover:bg-gray-50"
                       >
-                        How do I predict customer churn?
+                        How does the prediction work?
                       </button>
                       <button 
-                        onClick={() => handleQuickQuestion("What metrics should I look at?")}
-                        className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 py-1 px-2 rounded-full"
+                        onClick={() => handleQuickQuestion("How can I reduce churn?")}
+                        className="bg-white border border-gray-200 rounded-md px-3 py-1 text-xs hover:bg-gray-50"
                       >
-                        What metrics should I look at?
+                        How to reduce churn?
                       </button>
                       <button 
-                        onClick={() => handleQuickQuestion("How to reduce customer churn?")}
-                        className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 py-1 px-2 rounded-full"
+                        onClick={() => handleQuickQuestion("Which customers are at high risk?")}
+                        className="bg-white border border-gray-200 rounded-md px-3 py-1 text-xs hover:bg-gray-50"
                       >
-                        How to reduce customer churn?
+                        Who's at high risk?
                       </button>
                     </div>
                   </div>
@@ -292,34 +328,32 @@ export default function ChatBot() {
               </div>
             ))}
             <div ref={messagesEndRef} />
-            
-            {isLoading && (
-              <div className="flex justify-center items-center gap-1 text-gray-500">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
-              </div>
-            )}
           </div>
           
-          <form onSubmit={handleSubmit} className="p-3 border-t border-gray-200">
-            <div className="flex">
+          <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200">
+            <div className="flex gap-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your message..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-brand-purple"
-                disabled={isLoading}
+                placeholder="Ask me anything..."
+                className="flex-1 py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-transparent"
               />
               <button
                 type="submit"
-                className="bg-brand-purple text-white px-4 py-2 rounded-r-lg disabled:bg-gray-400"
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading}
+                className={`bg-brand-purple hover:bg-brand-light-purple text-white px-4 py-2 rounded-md ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                </svg>
+                {isLoading ? (
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                )}
               </button>
             </div>
           </form>

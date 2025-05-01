@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import { useDashboardData, useUsers } from '@/lib/hooks/use-query-hooks';
 
 interface ChurnPrediction {
   id: string;
@@ -56,105 +57,43 @@ interface PaginationInfo {
 }
 
 export default function DashboardPage() {
-  const [summary, setSummary] = useState<ChurnSummary>({
-    totalCustomers: 0,
-    highRiskCount: 0,
-    mediumRiskCount: 0,
-    lowRiskCount: 0,
-    recentPredictions: [],
-  });
-  const [users, setUsers] = useState<User[]>([]);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    total: 0,
-    page: 1,
-    limit: 10,
-    totalPages: 1,
-  });
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
   const [search, setSearch] = useState('');
   const [searchInputValue, setSearchInputValue] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const [planFilter, setPlanFilter] = useState<string>('all');
   const [riskFilter, setRiskFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [isFilterApplied, setIsFilterApplied] = useState(false);
-
   const [importLoading, setImportLoading] = useState(false);
 
-  useEffect(() => {
-    async function fetchChurnData() {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/dashboard-data');
-        
-        if (!response.ok) {
-          throw new Error(`Error fetching churn data: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setSummary(data);
-        setError(null);
-      } catch (err) {
-        console.error('Error loading churn data:', err);
-        setError('Failed to load churn data. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    }
+  const { 
+    data: dashboardData, 
+    isLoading: isDashboardLoading, 
+    error: dashboardError 
+  } = useDashboardData();
 
-    fetchChurnData();
-  }, []);
+  const { 
+    data: usersData, 
+    isLoading: isUsersLoading,
+    error: usersError
+  } = useUsers({
+    page,
+    limit,
+    search,
+    plan: planFilter,
+    riskCategory: riskFilter,
+    datePeriod: dateFilter
+  });
 
-  useEffect(() => {
-    async function fetchUsers() {
-      try {
-        const queryParams = new URLSearchParams({
-          page: pagination.page.toString(),
-          limit: pagination.limit.toString(),
-        });
-        
-        if (search) {
-          queryParams.append('search', search);
-        }
-        
-        if (planFilter && planFilter !== 'all') {
-          queryParams.append('plan', planFilter);
-        }
-        
-        if (riskFilter && riskFilter !== 'all') {
-          queryParams.append('riskCategory', riskFilter);
-        }
-        
-        if (dateFilter && dateFilter !== 'all') {
-          queryParams.append('datePeriod', dateFilter);
-        }
-        
-        const response = await fetch(`/api/users?${queryParams.toString()}`);
-        
-        if (!response.ok) {
-          throw new Error(`Error fetching users: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        setUsers(data.users);
-        setPagination(data.pagination);
-      } catch (err) {
-        console.error('Error loading users:', err);
-      }
-    }
-
-    fetchUsers();
-  }, [pagination.page, pagination.limit, search, planFilter, riskFilter, dateFilter]);
-
-  const handlePageChange = (page: number) => {
-    setPagination(prev => ({ ...prev, page }));
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSearch(searchInputValue);
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on new search
+    setPage(1);
   };
 
   const handleDownload = (format: 'csv' | 'excel') => {
@@ -169,7 +108,7 @@ export default function DashboardPage() {
   };
 
   const handleFilterApply = () => {
-    setPagination(prev => ({ ...prev, page: 1 })); 
+    setPage(1);
     setIsFilterApplied(true);
   };
 
@@ -177,7 +116,7 @@ export default function DashboardPage() {
     setPlanFilter('all');
     setRiskFilter('all');
     setDateFilter('all');
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPage(1);
     setIsFilterApplied(false);
   };
 
@@ -217,7 +156,10 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) {
+  const isLoading = isDashboardLoading || isUsersLoading;
+  const error = dashboardError || usersError;
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -233,7 +175,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <p className="text-lg font-medium text-red-600">Error</p>
-          <p className="text-sm text-gray-500">{error}</p>
+          <p className="text-sm text-gray-500">{error instanceof Error ? error.message : 'An error occurred'}</p>
           <button 
             onClick={() => window.location.reload()} 
             className="mt-4 px-4 py-2 bg-brand-purple text-white rounded hover:bg-brand-light-purple"
@@ -244,6 +186,22 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  const summary = dashboardData || {
+    totalCustomers: 0,
+    highRiskCount: 0,
+    mediumRiskCount: 0,
+    lowRiskCount: 0,
+    recentPredictions: [],
+  };
+  
+  const users = usersData?.users || [];
+  const pagination = usersData?.pagination || {
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  };
 
   return (
     <div>

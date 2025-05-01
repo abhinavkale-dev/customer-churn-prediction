@@ -28,14 +28,14 @@ const PricingSection = () => {
 
   return (
     <section className="py-16 bg-gray-50">
-      <div className="container">
+      <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4">Choose Your Plan</h2>
           <p className="text-xl text-gray-600">
             Select the perfect plan for your business needs. All plans include our core prediction engine.
           </p>
         </div>
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           <PricingCard
             title="Free Plan"
             description="Free tier with limited features."
