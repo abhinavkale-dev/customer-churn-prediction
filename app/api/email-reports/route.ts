@@ -92,12 +92,24 @@ export async function POST(request: Request) {
         `--${boundary}\r\n` +
         `Content-Type: text/html; charset=utf-8\r\n\r\n` +
         `<html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+              h1 { color: #6d28d9; margin-bottom: 20px; font-size: 24px; }
+              p { margin-bottom: 16px; }
+              strong { color: #6d28d9; font-weight: bold; }
+              .footer { margin-top: 30px; font-style: italic; color: #666; border-top: 1px solid #eee; padding-top: 15px; }
+            </style>
+          </head>
           <body>
             <h1>Churn Analysis Report</h1>
-            <p>Thank you for using our Churn Analysis platform.</p>
-            <p>Your requested report is attached in ${format.toUpperCase()} format.</p>
+            <p>Thank you for using our <strong>Churn Analysis platform</strong>.</p>
+            <p>Your requested report is attached in <strong>${format.toUpperCase()}</strong> format.</p>
             <p>This report includes customer information, risk categories, and churn probabilities to help you identify at-risk customers.</p>
             <p>For more detailed analysis and personalized retention strategies, please visit the dashboard.</p>
+            <div class="footer">
+              <p>— The Churn Analysis Team</p>
+            </div>
           </body>
         </html>\r\n\r\n`;
       

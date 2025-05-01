@@ -14,47 +14,8 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { useDashboardData, useUsers } from '@/lib/hooks/use-query-hooks';
+import { toast } from 'sonner';
 
-interface ChurnPrediction {
-  id: string;
-  userId: string;
-  name?: string;
-  email: string;
-  probability: number;
-  riskCategory: string;
-  predictedAt: string;
-}
-
-interface ChurnSummary {
-  totalCustomers: number;
-  highRiskCount: number;
-  mediumRiskCount: number;
-  lowRiskCount: number;
-  recentPredictions: ChurnPrediction[];
-}
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  plan: string;
-  createdAt: string;
-  updatedAt: string;
-  churnPrediction?: {
-    id: string;
-    probability: number;
-    willChurn: boolean;
-    riskCategory: string;
-    predictedAt: string;
-  } | null;
-}
-
-interface PaginationInfo {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
 
 export default function DashboardPage() {
   const [page, setPage] = useState(1);
@@ -123,7 +84,9 @@ export default function DashboardPage() {
     try {
       const email = 'abhinavkale19026166@gmail.com';
       
-      alert(`Sending ${format} report to ${email}...\nThis may take a moment if you have a large number of users.`);
+      const toastId = toast.loading(`Generating ${format.toUpperCase()} report...`, {
+        description: <span className="font-medium text-black">This may take a moment if you have a large number of users.</span>
+      });
       
       let allUsers = [];
       
@@ -133,7 +96,7 @@ export default function DashboardPage() {
         if (planFilter !== 'all') queryParams.append('plan', planFilter);
         if (riskFilter !== 'all') queryParams.append('riskCategory', riskFilter);
         if (dateFilter !== 'all') queryParams.append('datePeriod', dateFilter);
-        queryParams.append('limit', '1000'); 
+        queryParams.append('limit', '1000');
         
         const response = await fetch(`/api/users?${queryParams.toString()}`);
         
@@ -165,10 +128,18 @@ export default function DashboardPage() {
       }
       
       const result = await response.json();
-      alert(result.message || 'Your report has been sent successfully');
+      
+      toast.dismiss(toastId);
+      toast.success(result.message || 'Your report has been sent successfully', {
+        description: <span className="font-medium text-black">The {format.toUpperCase()} report was sent to {email}</span>
+      });
     } catch (error) {
       console.error('Error sending report:', error);
-      alert(`Error sending report: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      toast.dismiss();
+      toast.error(`Error sending report`, {
+        description: <span className="font-medium text-black">{error instanceof Error ? error.message : 'Unknown error'}</span>
+      });
     }
   };
 
