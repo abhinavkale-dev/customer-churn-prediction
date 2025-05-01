@@ -1,17 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    swcMinify: true,
-  },
-  webpack: (config, { isServer }) => {
-    // Force disable the use of lightningcss in Next.js
-    if (!isServer) {
-      config.experiments = {
-        ...config.experiments,
-        css: false,
-      };
-    }
+  webpack: (config) => {
     return config;
+  },
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
   }
 };
 

@@ -1,10 +1,12 @@
 // tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: ["class"],
   content: [
-    './app/**/*.{js,ts,jsx,tsx,css}',
-    './pages/**/*.{js,ts,jsx,tsx,css}',
-    './components/**/*.{js,ts,jsx,tsx,css}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './lib/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   safelist: [
     // ensure these are always generated
@@ -72,5 +74,5 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
 };
