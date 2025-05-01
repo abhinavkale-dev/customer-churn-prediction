@@ -7,7 +7,8 @@
     "start": "next start",
     "seed": "tsx scripts/seedData.ts",
     "lint": "next lint",
-    "reset-db": "node scripts/resetDb.js"
+    "reset-db": "node scripts/resetDb.js",
+    "postinstall": "npm rebuild lightningcss --platform=linux --arch=x64"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.21",
