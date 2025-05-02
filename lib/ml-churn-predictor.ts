@@ -265,7 +265,7 @@ class MLChurnPredictor {
     return {
       probability,
       willChurn: probability > 0.5,
-      confidence: 0.3 // Low confidence for fallback predictions
+      confidence: 0.3 
     };
   }
 
