@@ -228,7 +228,7 @@ export default function DashboardPage() {
                   tabIndex={-1}
                   onClick={() => sendReportToEmail('csv')}
                 >
-                  Get CSV Report
+                  Get CSV Report in Email
                 </button>
                 <button
                   className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 w-full text-left"
@@ -236,7 +236,7 @@ export default function DashboardPage() {
                   tabIndex={-1}
                   onClick={() => sendReportToEmail('excel')}
                 >
-                  Get Excel Report
+                  Get Excel Report in Email
                 </button>
               </div>
             </div>
